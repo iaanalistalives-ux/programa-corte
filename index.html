@@ -1,0 +1,1659 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Programa de Corte — PCP · LIVES</title>
+  <style>
+    /* ═══ PALETA OFICIAL LIVES — Petróleo + Esmeralda ═══ */
+    :root {
+      --petrol:     #0E3B36;   /* SOLO header background */
+      --emer:       #10B981;   /* SOLO borde 3px header + rotación gráficos */
+      --sage:       #0F7A5A;   /* color de acción: KPI, botones, activos */
+      --sage-dark:  #0B815E;   /* hover */
+      --slate:      #4E6B78;   /* segunda serie */
+      --taupe:      #B45309;   /* rotación gráficos */
+      --rose:       #DC2626;   /* alertas / negativo */
+      --tan:        #F59E0B;   /* monetario / meta */
+      --warm:       #DCE5E2;   /* bordes tarjetas y paneles */
+      --warm-light: #F1F6F4;   /* fondos suaves, grillas */
+      --stone:      #5F726C;   /* texto secundario / labels */
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; color:#1A1A1A; background:var(--warm-light); font:14px/1.45 Calibri,Arial,sans-serif; }
+
+    /* ─── HEADER ─── */
+    .header {
+      background: var(--petrol);
+      border-bottom: 3px solid var(--emer);
+      min-height: 72px;
+      display: flex; align-items: center;
+      padding: 0 24px; gap: 18px; flex-wrap: wrap;
+    }
+    .header svg { height: 30px; display: block; flex-shrink: 0; }
+    .hdivider { width:1px; height:34px; background:rgba(255,255,255,.35); flex-shrink:0; }
+    .htitle { color:#fff; font-size:17px; font-weight:700; letter-spacing:.3px; }
+    .hsub   { color:var(--warm-light); font-size:12px; margin-top:2px; }
+    .hactions { display:flex; flex-wrap:wrap; gap:7px; margin-left:auto; align-items:center; }
+
+    /* ─── BUTTONS ─── */
+    button, label.file-btn {
+      display:inline-flex; align-items:center; gap:6px;
+      height:34px; padding:0 13px; border-radius:6px;
+      font:700 13px/1 Calibri,Arial,sans-serif;
+      cursor:pointer; white-space:nowrap; border:1px solid transparent;
+    }
+    .btn-white { background:#fff; color:var(--sage); border-color:transparent; }
+    .btn-white:hover { background:var(--warm-light); }
+    .btn-ghost { background:rgba(255,255,255,.12); color:#fff; border-color:rgba(255,255,255,.35); }
+    .btn-ghost:hover { background:rgba(255,255,255,.22); }
+    .btn-action { background:#fff; color:var(--sage); border-color:transparent; }
+    .btn-icon { width:34px; padding:0; justify-content:center; }
+    input[type="file"] { display:none; }
+    select, input[type="text"], input[type="date"] {
+      height:34px; border:1px solid var(--warm); border-radius:6px;
+      background:#fff; padding:0 10px;
+      font:14px Calibri,Arial,sans-serif; color:#1A1A1A;
+    }
+    select:focus, input:focus { outline:2px solid var(--sage); outline-offset:1px; }
+
+    /* ─── MAIN ─── */
+    main { padding:16px 24px 48px; max-width:1840px; margin:0 auto; }
+
+    /* ─── DROPZONE (pantalla inicial) ─── */
+    .drop { border:2px dashed var(--warm); border-radius:10px; background:#fff; padding:44px 24px; text-align:center; cursor:pointer; transition:.15s; margin-top:8px; }
+    .drop:hover, .drop.over { border-color:var(--sage); background:var(--warm-light); }
+    .drop .big { font-size:17px; font-weight:700; color:#1A1A1A; margin-bottom:5px; }
+    .drop .sm  { font-size:12.5px; color:var(--stone); }
+    .drop .dropbtn { display:inline-flex; align-items:center; gap:6px; margin-top:14px; background:var(--sage); color:#fff; font-weight:700; font-family:inherit; font-size:13px; border:none; border-radius:6px; padding:10px 20px; cursor:pointer; }
+    .drop .dropbtn:hover { background:var(--sage-dark); }
+
+    /* ─── BARRA DE ARCHIVO CARGADO ─── */
+    .filebar { display:none; align-items:center; gap:14px; flex-wrap:wrap; margin:8px 0 16px; padding-bottom:14px; border-bottom:1px solid var(--warm-light); }
+    .filebar .fname { font-size:12.5px; color:var(--stone); }
+    .filebar .fname b { color:#1A1A1A; }
+    .filebar button { background:#fff; border:1px solid var(--warm); color:var(--sage); font-size:12.5px; padding:0 14px; height:30px; }
+
+    /* ─── TOOLBAR ─── */
+    .toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center; }
+    #searchInput { width:240px; }
+
+    /* ─── KPI CARDS ─── */
+    .kpis { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+    .kpi { background:#fff; border:1px solid var(--warm); border-radius:8px; padding:16px 18px; flex:1; min-width:120px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    .kpi.primary { border:2px solid var(--sage); }
+    .kpi .v { font-size:28px; font-weight:700; color:var(--sage); line-height:1.1; }
+    .kpi.primary .v { font-size:34px; }
+    .kpi .l { font-size:12px; color:#333; margin-top:4px; font-weight:600; }
+
+    /* ─── MINI PANELS ─── */
+    .mini-panels { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:14px; margin-bottom:16px; }
+    .mini-panel { background:#fff; border:1px solid var(--warm); border-radius:8px; padding:14px 16px; min-height:110px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    .mini-panel h2 { margin:0 0 10px; font-size:13px; color:var(--sage-dark); font-weight:700; }
+    .sum-list { display:grid; gap:7px; }
+    .sum-row { display:grid; grid-template-columns:minmax(100px,1fr) auto; gap:8px; align-items:start; font-size:12px; color:var(--stone); }
+    .sum-row strong { color:#1A1A1A; font-variant-numeric:tabular-nums; }
+    .cap-bar { height:6px; border-radius:99px; background:var(--warm-light); overflow:hidden; margin-top:3px; grid-column:1/-1; }
+    .cap-bar i { display:block; height:100%; background:var(--sage); }
+    .cap-bar.over i { background:var(--rose); }
+
+    /* ─── STATUS STRIP ─── */
+    .status-strip { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; width:340px; max-width:40vw; }
+    .st-bar { height:7px; border-radius:99px; overflow:hidden; background:var(--warm-light); }
+    .st-bar i { display:block; height:100%; background:var(--emer); }
+
+    /* ─── PANEL ─── */
+    .panel { background:#fff; border:1px solid var(--warm); border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    .panel-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-bottom:1px solid var(--warm-light); background:var(--warm-light); }
+    .panel-title { font-weight:700; color:var(--sage-dark); font-size:13px; }
+    .hint { color:var(--stone); font-size:12px; }
+
+    /* ─── PANEL MÓDULOS ─── */
+    .modtabs { display:flex; gap:8px; flex-wrap:wrap; padding:12px 16px; border-bottom:1px solid var(--warm-light); }
+    .modtab { background:#fff; border:1px solid var(--warm); color:var(--sage); font-size:12.5px; font-weight:700; padding:0 14px; height:30px; border-radius:6px; cursor:pointer; font-family:inherit; }
+    .modtab:hover { background:var(--warm-light); }
+    .modtab.active { background:var(--sage); color:#fff; border-color:var(--sage); }
+    .modtable { width:100%; border-collapse:collapse; font-size:12px; }
+    .modtable th { position:sticky; top:0; background:var(--warm-light); color:var(--stone); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; padding:6px 8px; text-align:left; border-bottom:1px solid var(--warm); }
+    .modtable td { padding:6px 8px; border-bottom:1px solid #EDF1F6; vertical-align:middle; }
+    .modtable td.modcell { background:var(--warm-light); color:var(--sage-dark); font-weight:700; text-align:center; border-right:2px solid var(--sage); white-space:nowrap; }
+    .modtable td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .modtable th.num { text-align:right; }
+    .modtable tr.modgroup-start td { border-top:2px solid var(--sage); }
+    .sched-btn { background:#fff; border:1px solid var(--warm); color:var(--sage); font-size:12.5px; font-weight:700; padding:0 14px; height:30px; border-radius:6px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+    .sched-btn:hover { background:var(--warm-light); }
+
+    /* ─── TABLE ─── */
+    .table-wrap { overflow:auto; max-height:calc(100vh - 330px); min-height:360px; }
+    table { width:100%; border-collapse:separate; border-spacing:0; min-width:2080px; }
+    th, td { border-bottom:1px solid #EDF1F6; padding:6px 8px; text-align:left; vertical-align:middle; background:#fff; }
+    th { position:sticky; top:0; z-index:2; background:var(--warm-light); color:var(--stone); font-size:10px; font-weight:700; white-space:nowrap; border-bottom:1px solid var(--warm); text-transform:uppercase; letter-spacing:.4px; }
+    tbody tr:hover td { background:#F7FAF9; }
+    td.num     { text-align:right; font-variant-numeric:tabular-nums; }
+    td.compact { white-space:nowrap; }
+    td.desp    { white-space:nowrap; font-weight:700; color:var(--sage); }
+
+    /* ─── PILLS ─── */
+    .pill { display:inline-flex; align-items:center; justify-content:center; min-width:40px; height:21px; padding:0 7px; border-radius:99px; font-size:11px; font-weight:700; border:1px solid transparent; }
+    .pill.ok     { color:var(--sage);  background:#E6F4EF; border-color:#A7D9C6; }
+    .pill.wait   { color:var(--taupe); background:#FEF3C7; border-color:#F9D475; }
+    .pill.urgent { color:var(--rose);  background:#FEE2E2; border-color:#FCA5A5; }
+    .pill.soft   { color:#395268;      background:#EDF3F7; border-color:#C8D8E0; }
+
+    /* ─── TYPE TOGGLE ─── */
+    .type-toggle { display:grid; grid-template-columns:1fr 1fr; width:128px; height:26px; border:1.5px solid var(--sage); border-radius:6px; overflow:hidden; }
+    .type-toggle button { border:0; border-radius:0; height:24px; padding:0 6px; font-size:11px; justify-content:center; color:var(--sage); background:#fff; font-weight:700; }
+    .type-toggle button.active { background:var(--sage); color:#fff; }
+
+    /* ─── INLINE INPUTS ─── */
+    .obs        { width:155px; height:26px; border:1px solid var(--warm); border-radius:5px; }
+    .date-in    { width:126px; height:26px; border:1px solid var(--warm); border-radius:5px; padding:0 7px; }
+    .small-sel  { width:110px; height:26px; border:1px solid var(--warm); border-radius:5px; padding:0 6px; }
+    .wide-sel   { width:210px; height:26px; border:1px solid var(--warm); border-radius:5px; padding:0 6px; }
+
+    /* ─── EMPTY ─── */
+    .empty { display:grid; place-items:center; min-height:360px; color:var(--stone); text-align:center; padding:32px; }
+
+    /* ─── TOAST ─── */
+    .toast { position:fixed; right:18px; bottom:18px; max-width:460px; padding:12px 16px; background:#1A1A1A; color:#fff; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,.25); display:none; z-index:9999; font-size:13px; }
+
+    /* ─── MODAL DE REPORTES (Dashboard / Reposo / Envíos / Exportar vista) ─── */
+    .modal-overlay { position:fixed; inset:0; background:rgba(14,59,54,.55); z-index:10000; display:flex; align-items:center; justify-content:center; padding:22px; }
+    .modal-overlay[hidden] { display:none; }
+    .modal-box { background:#fff; width:min(1300px,96vw); height:min(92vh,980px); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,.35); }
+    .modal-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--petrol); color:#fff; padding:10px 16px; border-bottom:3px solid var(--emer); flex:0 0 auto; }
+    .modal-title { font-weight:700; font-size:13px; }
+    .modal-actions { display:flex; gap:8px; }
+    .modal-actions button { background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.32); border-radius:6px; padding:0 12px; height:30px; font-weight:700; font-size:12.5px; cursor:pointer; font-family:inherit; }
+    .modal-actions button:hover { background:rgba(255,255,255,.26); }
+    #modalFrame { flex:1; border:none; width:100%; background:#fff; }
+
+    @media(max-width:980px){
+      .header{flex-direction:column;align-items:flex-start;padding:14px 16px;min-height:auto;}
+      .hactions{margin-left:0;}
+      .kpis{display:grid;grid-template-columns:repeat(3,1fr);}
+      .mini-panels{grid-template-columns:1fr;}
+      .table-wrap{max-height:none;}
+    }
+    @media(max-width:620px){
+      main{padding:10px;}
+      .kpis{grid-template-columns:1fr 1fr;}
+      .toolbar{flex-direction:column;align-items:stretch;}
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <!-- Logo LIVES (blanco, embebido) -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="256 892 1070 285" fill="#FFFFFF">
+    <path d="M922,969C922,955 921.967,941.502 922.029,928.004C922.057,921.871 922.872,921.033 929.002,921.028C974.332,920.995 1019.661,920.995 1064.990,921.028C1071.123,921.033 1071.856,921.877 1071.987,927.999C1072.220,938.950 1072.176,938.998 1060.993,938.999C1027.830,939.002 994.666,938.992 961.502,939.009C953.449,939.013 953.015,939.452 953.008,947.502C952.989,969.667 952.985,991.832 953.012,1013.997C953.021,1021.405 953.593,1021.979 961.001,1021.986C989.165,1022.012 1017.329,1021.994 1045.494,1022.004C1054.577,1022.007 1057.367,1025.554 1054.561,1034.424C1054.052,1036.032 1050.938,1037.752 1048.978,1037.810C1037.822,1038.142 1026.652,1037.990 1015.486,1037.993C997.154,1037.999 978.822,1037.973 960.491,1038.014C953.733,1038.029 953.027,1038.732 953.018,1045.511C952.986,1072.175 952.986,1098.839 953.019,1125.504C953.027,1132.271 953.735,1132.980 960.505,1132.986C994.669,1133.018 1028.833,1132.944 1062.996,1133.118C1065.835,1133.133 1070.873,1134.320 1071.106,1135.634C1071.948,1140.376 1071.450,1145.447 1070.740,1150.288C1070.618,1151.119 1066.993,1151.892 1064.978,1151.915C1051.980,1152.064 1038.981,1151.999 1025.982,1151.999C994.151,1152 962.321,1152.008 930.490,1151.991C922.450,1151.987 922.011,1151.549 922.009,1143.485C921.996,1085.490 922.001,1027.495 922,969z"/>
+    <path d="M1256.372,929.606C1268.946,937.232 1277.885,947.439 1282.436,961.161C1284.607,967.707 1283.631,968.603 1276.903,969.058C1267.447,969.698 1259.984,969.504 1257.140,957.198C1254.540,945.953 1244.487,940.064 1233.806,936.471C1213.884,929.769 1194.238,929.839 1175.096,939.433C1163.825,945.081 1156.191,953.317 1155.006,966.516C1153.711,980.937 1160.740,990.462 1172.342,997.777C1189.302,1008.470 1208.214,1014.498 1226.891,1021.084C1242.068,1026.437 1256.259,1033.445 1269.260,1043.090C1305.999,1070.343 1298.081,1125.318 1259.653,1145.171C1245.750,1152.353 1230.879,1155.424 1215.393,1155.986C1199.309,1156.570 1183.444,1155.447 1168.092,1150.021C1149.534,1143.461 1133.989,1133.213 1125.519,1114.696C1123.338,1109.928 1122.319,1104.568 1121.225,1099.384C1120.391,1095.429 1122.107,1092.881 1126.585,1093.038C1131.902,1093.178 1137.726,1091.744 1141.232,1093.966C1144.263,1095.888 1144.829,1101.910 1146.194,1106.211C1150.758,1120.591 1160.326,1130.529 1174.283,1135.353C1198.470,1143.713 1222.661,1143.713 1246.167,1132.378C1254.947,1128.144 1260.784,1121.105 1262.737,1111.625C1266.853,1091.652 1262.435,1077.169 1244.663,1064.734C1231.645,1055.624 1216.844,1050.589 1202.283,1044.842C1188.217,1039.291 1174.020,1033.849 1160.598,1026.961C1149.134,1021.077 1138.936,1012.718 1134.008,1000.155C1123.728,973.945 1130.833,940.327 1163.225,925.875C1194.405,911.962 1225.692,913.162 1256.372,929.606z"/>
+    <path d="M689.712,964.261C706.209,1003.807 722.545,1043.004 738.893,1082.196C742.589,1091.056 746.327,1099.898 750.633,1110.147C752.219,1107.257 753.274,1105.719 753.959,1104.031C771.246,1061.439 788.484,1018.828 805.752,976.228C812.259,960.177 819.031,944.230 825.238,928.064C827.324,922.631 830.379,920.715 836.056,920.895C846.348,921.221 846.284,920.924 842.467,930.333C825.373,972.463 808.339,1014.619 791.257,1056.754C779.243,1086.386 767.103,1115.969 755.234,1145.659C753.422,1150.192 750.980,1152.172 746.015,1152.073C729.620,1151.745 732.479,1153.513 726.528,1139.313C696.857,1068.508 667.158,997.715 637.463,926.920C635.370,921.931 635.841,921.081 641.271,921.032C649.600,920.956 657.932,921.107 666.260,920.984C670.107,920.927 672.420,922.471 673.877,926.066C679.005,938.721 684.314,951.302 689.712,964.261z"/>
+    <path d="M276.005,1003C276.006,978.002 275.992,953.504 276.018,929.006C276.027,921.599 276.605,921.048 284.007,921.012C289.839,920.984 295.673,921.071 301.505,921.029C305.258,921.002 307.037,922.776 306.964,926.515C306.925,928.514 306.996,930.514 306.996,932.514C306.998,996.175 306.996,1059.837 307.002,1123.498C307.003,1132.884 307.120,1132.999 316.500,1133.002C350.163,1133.011 383.827,1132.998 417.491,1133.015C425.546,1133.019 425.956,1133.467 425.996,1141.505C426.002,1142.505 426.005,1143.505 425.992,1144.504C425.899,1151.268 425.267,1151.977 418.490,1151.981C373.494,1152.006 328.498,1152.006 283.501,1151.981C276.739,1151.977 276.028,1151.264 276.024,1144.488C275.997,1097.492 276.007,1050.496 276.005,1003z"/>
+    <path d="M546,979C545.999,1033.996 546.004,1088.493 545.994,1142.989C545.993,1151.705 545.706,1151.978 537.006,1151.994C531.507,1152.005 526.007,1151.929 520.508,1151.971C516.761,1152 514.955,1150.242 515.040,1146.496C515.070,1145.164 515.006,1143.830 515.006,1142.497C515.004,1071.835 515.002,1001.173 515.007,930.511C515.008,921.119 515.123,921.018 524.500,921.003C529.499,920.995 534.504,921.158 539.497,920.974C544.199,920.802 546.068,922.808 546.034,927.504C545.910,944.502 545.994,961.501 546,979z"/>
+  </svg>
+  <div class="hdivider"></div>
+  <div>
+    <div class="htitle">Programa de Corte</div>
+    <div class="hsub">Órdenes · Avance de ruta · Tizado · Medidas — PCP</div>
+  </div>
+  <div class="hactions">
+    <button class="btn-action" id="dashboardBtn">📊 Dashboard</button>
+    <button class="btn-ghost btn-icon" id="clearBtn" title="Limpiar datos">✕</button>
+  </div>
+</header>
+
+<main>
+  <div class="drop" id="dropZone" style="cursor:default;">
+    <div class="big" id="loadBig">Cargando listado desde Google Sheet…</div>
+    <div class="sm" id="loadSmall">Esto puede tardar unos segundos.</div>
+    <button type="button" class="dropbtn" id="dropSelectBtn" style="display:none;">🔄 Reintentar</button>
+  </div>
+
+  <div class="filebar" id="fileBar">
+    <span class="fname">Fuente: <b id="fileBarName"></b></span>
+    <button type="button" id="changeFileBtn">🔄 Actualizar desde Sheet</button>
+  </div>
+
+  <div id="appBody" style="display:none">
+  <section class="toolbar" aria-label="Filtros">
+    <input id="searchInput" type="text" placeholder="Buscar por grupo, OC, partida, color o taller…">
+    <select id="priorityFilter">
+      <option value="">Todas las prioridades</option>
+      <option value="URGENTE">Urgente</option>
+      <option value="PRIORIDAD 1">Prioridad 1</option>
+      <option value="PRIORIDAD 2">Prioridad 2</option>
+      <option value="PRIORIDAD 3">Prioridad 3</option>
+    </select>
+    <select id="routeFilter">
+      <option value="">Todo avance</option>
+      <option value="pendiente">Pendientes</option>
+      <option value="ruta">Ruta OK</option>
+      <option value="tiz">Tizado OK</option>
+      <option value="medidas">Medidas OK</option>
+    </select>
+    <select id="typeFilter">
+      <option value="">Servicio y planta</option>
+      <option value="Servicio">Solo servicio</option>
+      <option value="Planta">Solo planta</option>
+    </select>
+    <button id="reposoBtn">Programa reposo</button>
+    <button id="envioBtn">Programa envíos</button>
+  </section>
+
+  <div class="kpis">
+    <div class="kpi primary"><div class="v" id="statRows">0</div><div class="l">Órdenes filtradas</div></div>
+    <div class="kpi"><div class="v" id="statOc">0</div><div class="l">O/C únicas</div></div>
+    <div class="kpi"><div class="v" id="statPdas">0</div><div class="l">Prendas prog.</div></div>
+    <div class="kpi"><div class="v" id="statKg">0</div><div class="l">Kg programados</div></div>
+    <div class="kpi"><div class="v" id="statServicio">0%</div><div class="l">Servicios</div></div>
+    <div class="kpi"><div class="v" id="statPlanta">0%</div><div class="l">Planta</div></div>
+  </div>
+
+  <section class="mini-panels" aria-label="Programación">
+    <div class="mini-panel"><h2>Planta por módulo</h2><div class="sum-list" id="moduleSummary"></div></div>
+    <div class="mini-panel"><h2>Servicios de corte</h2><div class="sum-list" id="serviceSummary"></div></div>
+    <div class="mini-panel"><h2>Reposo y envíos</h2><div class="sum-list" id="dateSummary"></div></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Tablero diario</div>
+        <div class="hint" id="sourceHint">Importa el listado para comenzar.</div>
+      </div>
+      <div class="status-strip">
+        <div><div class="hint">Ruta</div><div class="st-bar"><i id="barRuta"></i></div></div>
+        <div><div class="hint">Tiz.</div><div class="st-bar"><i id="barTiz"></i></div></div>
+        <div><div class="hint">Medidas</div><div class="st-bar"><i id="barMedidas"></i></div></div>
+      </div>
+    </div>
+    <div class="modtabs" id="modTabs"></div>
+    <div class="table-wrap" id="groupedWrap" hidden>
+      <table class="modtable">
+        <thead>
+          <tr>
+            <th style="width:90px;">Módulo</th>
+            <th>Prioridad</th>
+            <th>Grupo</th>
+            <th>Estilo</th>
+            <th>Color</th>
+            <th>O/C</th>
+            <th>Taller costura</th>
+            <th>Fecha prog.</th>
+            <th class="num">Min prog</th>
+          </tr>
+        </thead>
+        <tbody id="modBody"></tbody>
+      </table>
+    </div>
+    <div class="table-wrap" id="flatWrap">
+      <table id="ordersTable" hidden>
+        <thead>
+          <tr>
+            <th>Prioridad</th>
+            <th>Fec. Desp.</th>
+            <th>Tipo</th>
+            <th>Grupo</th>
+            <th>Estilo</th>
+            <th>Color</th>
+            <th>O/C</th>
+            <th>Partida</th>
+            <th>Kg</th>
+            <th>Prendas</th>
+            <th>Min prog</th>
+            <th>Ruta</th>
+            <th>Tiz.</th>
+            <th>Medidas</th>
+            <th>Fecha prog.</th>
+            <th>Módulo</th>
+            <th>Taller costura</th>
+            <th>Serv. corte</th>
+            <th>Reposo</th>
+            <th>Envío serv.</th>
+            <th>Obs.</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
+      <div class="empty" id="emptyState">
+        <div>
+          <strong>No hay listado cargado.</strong><br>
+          Arrastra o selecciona el listado del día para comenzar.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px;">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Programación por capacidad diaria</div>
+        <div class="hint">Reparte los minutos de cada orden (Prendas × Min prog) entre días, a razón de 1,346.6 min/módulo/día — capacidad compartida entre órdenes del mismo módulo, sin domingos.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label class="hint" for="dateFilter" style="white-space:nowrap;">Filtrar por fecha</label>
+        <select id="dateFilter"><option value="">Todas las fechas</option></select>
+        <button type="button" class="sched-btn" id="scheduleExportBtn">🖨️ Exportar vista</button>
+      </div>
+    </div>
+    <div class="table-wrap" style="max-height:420px;">
+      <table class="modtable" id="scheduleTable">
+        <thead><tr id="scheduleHead"></tr></thead>
+        <tbody id="scheduleBody"></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal-box">
+    <div class="modal-toolbar">
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-actions">
+        <button type="button" id="modalPdfBtn">🖨️ PDF</button>
+        <button type="button" id="modalImgBtn">🖼️ Imagen</button>
+        <button type="button" id="modalCloseBtn">✕ Cerrar</button>
+      </div>
+    </div>
+    <iframe id="modalFrame" title="Reporte"></iframe>
+  </div>
+</div>
+
+<script>
+// ═══ LOGO SVG (embebido para ventanas generadas) ═══
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="256 892 1070 285" fill="#FFFFFF" style="height:28px;display:block;flex-shrink:0"><path d="M922,969C922,955 921.967,941.502 922.029,928.004C922.057,921.871 922.872,921.033 929.002,921.028C974.332,920.995 1019.661,920.995 1064.990,921.028C1071.123,921.033 1071.856,921.877 1071.987,927.999C1072.220,938.950 1072.176,938.998 1060.993,938.999C1027.830,939.002 994.666,938.992 961.502,939.009C953.449,939.013 953.015,939.452 953.008,947.502C952.989,969.667 952.985,991.832 953.012,1013.997C953.021,1021.405 953.593,1021.979 961.001,1021.986C989.165,1022.012 1017.329,1021.994 1045.494,1022.004C1054.577,1022.007 1057.367,1025.554 1054.561,1034.424C1054.052,1036.032 1050.938,1037.752 1048.978,1037.810C1037.822,1038.142 1026.652,1037.990 1015.486,1037.993C997.154,1037.999 978.822,1037.973 960.491,1038.014C953.733,1038.029 953.027,1038.732 953.018,1045.511C952.986,1072.175 952.986,1098.839 953.019,1125.504C953.027,1132.271 953.735,1132.980 960.505,1132.986C994.669,1133.018 1028.833,1132.944 1062.996,1133.118C1065.835,1133.133 1070.873,1134.320 1071.106,1135.634C1071.948,1140.376 1071.450,1145.447 1070.740,1150.288C1070.618,1151.119 1066.993,1151.892 1064.978,1151.915C1051.980,1152.064 1038.981,1151.999 1025.982,1151.999C994.151,1152 962.321,1152.008 930.490,1151.991C922.450,1151.987 922.011,1151.549 922.009,1143.485C921.996,1085.490 922.001,1027.495 922,969z"/><path d="M1256.372,929.606C1268.946,937.232 1277.885,947.439 1282.436,961.161C1284.607,967.707 1283.631,968.603 1276.903,969.058C1267.447,969.698 1259.984,969.504 1257.140,957.198C1254.540,945.953 1244.487,940.064 1233.806,936.471C1213.884,929.769 1194.238,929.839 1175.096,939.433C1163.825,945.081 1156.191,953.317 1155.006,966.516C1153.711,980.937 1160.740,990.462 1172.342,997.777C1189.302,1008.470 1208.214,1014.498 1226.891,1021.084C1242.068,1026.437 1256.259,1033.445 1269.260,1043.090C1305.999,1070.343 1298.081,1125.318 1259.653,1145.171C1245.750,1152.353 1230.879,1155.424 1215.393,1155.986C1199.309,1156.570 1183.444,1155.447 1168.092,1150.021C1149.534,1143.461 1133.989,1133.213 1125.519,1114.696C1123.338,1109.928 1122.319,1104.568 1121.225,1099.384C1120.391,1095.429 1122.107,1092.881 1126.585,1093.038C1131.902,1093.178 1137.726,1091.744 1141.232,1093.966C1144.263,1095.888 1144.829,1101.910 1146.194,1106.211C1150.758,1120.591 1160.326,1130.529 1174.283,1135.353C1198.470,1143.713 1222.661,1143.713 1246.167,1132.378C1254.947,1128.144 1260.784,1121.105 1262.737,1111.625C1266.853,1091.652 1262.435,1077.169 1244.663,1064.734C1231.645,1055.624 1216.844,1050.589 1202.283,1044.842C1188.217,1039.291 1174.020,1033.849 1160.598,1026.961C1149.134,1021.077 1138.936,1012.718 1134.008,1000.155C1123.728,973.945 1130.833,940.327 1163.225,925.875C1194.405,911.962 1225.692,913.162 1256.372,929.606z"/><path d="M689.712,964.261C706.209,1003.807 722.545,1043.004 738.893,1082.196C742.589,1091.056 746.327,1099.898 750.633,1110.147C752.219,1107.257 753.274,1105.719 753.959,1104.031C771.246,1061.439 788.484,1018.828 805.752,976.228C812.259,960.177 819.031,944.230 825.238,928.064C827.324,922.631 830.379,920.715 836.056,920.895C846.348,921.221 846.284,920.924 842.467,930.333C825.373,972.463 808.339,1014.619 791.257,1056.754C779.243,1086.386 767.103,1115.969 755.234,1145.659C753.422,1150.192 750.980,1152.172 746.015,1152.073C729.620,1151.745 732.479,1153.513 726.528,1139.313C696.857,1068.508 667.158,997.715 637.463,926.920C635.370,921.931 635.841,921.081 641.271,921.032C649.600,920.956 657.932,921.107 666.260,920.984C670.107,920.927 672.420,922.471 673.877,926.066C679.005,938.721 684.314,951.302 689.712,964.261z"/><path d="M276.005,1003C276.006,978.002 275.992,953.504 276.018,929.006C276.027,921.599 276.605,921.048 284.007,921.012C289.839,920.984 295.673,921.071 301.505,921.029C305.258,921.002 307.037,922.776 306.964,926.515C306.925,928.514 306.996,930.514 306.996,932.514C306.998,996.175 306.996,1059.837 307.002,1123.498C307.003,1132.884 307.120,1132.999 316.500,1133.002C350.163,1133.011 383.827,1132.998 417.491,1133.015C425.546,1133.019 425.956,1133.467 425.996,1141.505C426.002,1142.505 426.005,1143.505 425.992,1144.504C425.899,1151.268 425.267,1151.977 418.490,1151.981C373.494,1152.006 328.498,1152.006 283.501,1151.981C276.739,1151.977 276.028,1151.264 276.024,1144.488C275.997,1097.492 276.007,1050.496 276.005,1003z"/><path d="M546,979C545.999,1033.996 546.004,1088.493 545.994,1142.989C545.993,1151.705 545.706,1151.978 537.006,1151.994C531.507,1152.005 526.007,1151.929 520.508,1151.971C516.761,1152 514.955,1150.242 515.040,1146.496C515.070,1145.164 515.006,1143.830 515.006,1142.497C515.004,1071.835 515.002,1001.173 515.007,930.511C515.008,921.119 515.123,921.018 524.500,921.003C529.499,920.995 534.504,921.158 539.497,920.974C544.199,920.802 546.068,922.808 546.034,927.504C545.910,944.502 545.994,961.501 546,979z"/></svg>`;
+
+// ═══ ESTADO ═══
+const state = {
+  rows: [], filtered: [], sourceName: "",
+  prefs: JSON.parse(localStorage.getItem("cortePrefs") || "{}")
+};
+let moduleViewSel = null; // null = sin filtro (tablero normal); "Todos" = vista agrupada; o un módulo puntual
+const SHEET_ID = "1A2qzluipN47UruivzYTRoQmXyVlR66T3uheaSaOXfXI"; // LISTADO_CORTE_PCP
+
+// Mapa de columnas Excel → campo JS
+const COL = {
+  prioridad:"PRIORIDAD", fechaDespacho:"FEC DESP",
+  grupo:"GRUPO", oc:"O/C", op:"O/P",
+  estilo:"ESTILO LIVES", destino:"DESTINO",
+  rutaTexto:"RUTA", minProg:"MINUTOS CORTE",
+  color:"PRESENTACION", pieza:"PIEZA",
+  tela:"TELA", colorTela:"COLOR",
+  partida:"PARTIDA",
+  pdas:"PRENDAS PROG", pdasReales:"PRENDAS REALES",
+  kg:"KGS. PROGR.",
+  moldeFecha:"FEC. ASIGNACION MOLDE PIEZA",
+  tizFecha:"FEC. TIZADO",
+  medidasFecha:"FEC. MEDIDAS TENDIDO",
+  proveedor:"PROVEEDOR LAVANDERIA"
+};
+const DATE_KEYS = new Set(["fechaDespacho","moldeFecha","tizFecha","medidasFecha"]);
+
+const SEWING = [
+  "MEDINA EDQUEN DE CHAVEZ CARMELA","GROUP INVERSIONES CRG S.A.C.",
+  "TOLENTINO VENEROS GLORIA RENE","LEVANO FELIPA JESUS MANUEL",
+  "COLQUI SEGURA CENAIDA","KICAÑO ALEGRE ROSA MARIA",
+  "ESPARZA DE LA CRUZ ALEJANDRO LUIS","QUINTANA CORONADO EVER",
+  "CONFECCIONES D HURTADO E.I.R.L.","CABRERA IRIGOIN JUAN CARLOS",
+  "CORPORACION MARUDI S.A.C.","ORIA ROJAS YINY ANGEL",
+  "YMAN ANTON SARITA MERCEDES","QUISPE CHILON CLEVER",
+  "OSPINAL SANTANA OSCAR","QUISPE VILLAFAN EDWIN",
+  "RAMIREZ MINAYA MAGDALENA","SERCON ARA E.I.R.L.",
+  "QUITO SURCO JULIAN","SE PATHA E.I.R.L.","AMBELL EXPORT E.I.R.L"
+];
+const CUTTING = [
+  "FLORES MELCHOR ADRIAN EDGAR","INOCENTE RODRIGUEZ JILMER CLEOGE",
+  "COTTON EXITO S.A.C.","RODRIGUEZ PORTILLO EDGAR JUNIOR",
+  "CHURAMPI MUÑOZ JONNY MICHEL","HUERTA MENDOZA LUIS GERARDO",
+  "SALAZAR CORNEJO MARTIN BERNARDO","SILVESTRE JARA JONARM JAMEL"
+];
+const MODULES = ["Modulo 1","Modulo 2","Modulo 3"];
+const MODULE_CAP = 1346.6; // capacidad real de corte por módulo, min/día (confirmado por Christian)
+
+function el(id){ return document.getElementById(id); }
+const E = {
+  clearBtn:el("clearBtn"),
+  dashboardBtn:el("dashboardBtn"),
+  searchInput:el("searchInput"), priorityFilter:el("priorityFilter"),
+  routeFilter:el("routeFilter"), typeFilter:el("typeFilter"),
+  reposoBtn:el("reposoBtn"), envioBtn:el("envioBtn"),
+  sourceHint:el("sourceHint"),
+  table:el("ordersTable"), body:el("ordersBody"), empty:el("emptyState"),
+  toast:el("toast"),
+  statRows:el("statRows"), statOc:el("statOc"), statPdas:el("statPdas"),
+  statKg:el("statKg"), statServicio:el("statServicio"), statPlanta:el("statPlanta"),
+  barRuta:el("barRuta"), barTiz:el("barTiz"), barMedidas:el("barMedidas"),
+  moduleSummary:el("moduleSummary"), serviceSummary:el("serviceSummary"), dateSummary:el("dateSummary"),
+  dropZone:el("dropZone"), dropSelectBtn:el("dropSelectBtn"),
+  fileBar:el("fileBar"), fileBarName:el("fileBarName"), changeFileBtn:el("changeFileBtn"),
+  appBody:el("appBody"),
+  modTabs:el("modTabs"), modBody:el("modBody"),
+  flatWrap:el("flatWrap"), groupedWrap:el("groupedWrap"),
+  dateFilter:el("dateFilter"), scheduleHead:el("scheduleHead"), scheduleBody:el("scheduleBody"),
+  scheduleExportBtn:el("scheduleExportBtn"),
+  loadBig:el("loadBig"), loadSmall:el("loadSmall"),
+  modalOverlay:el("modalOverlay"), modalTitle:el("modalTitle"), modalFrame:el("modalFrame"),
+  modalPdfBtn:el("modalPdfBtn"), modalImgBtn:el("modalImgBtn"), modalCloseBtn:el("modalCloseBtn")
+};
+
+// ═══ MODAL DE REPORTES (Dashboard / Reposo / Envíos / Exportar vista) ═══
+// Los reportes se muestran en un <iframe> dentro de esta misma página (no una pestaña
+// nueva), con su propio historial: el botón "atrás" del navegador también lo cierra.
+let modalHistoryPushed = false;
+
+function openReportModal(title, html){
+  E.modalTitle.textContent = title;
+  E.modalFrame.srcdoc = html;
+  E.modalOverlay.hidden = false;
+  if (!modalHistoryPushed) {
+    history.pushState({ corteModal: true }, "", "");
+    modalHistoryPushed = true;
+  }
+}
+
+function closeReportModal(fromPopstate){
+  E.modalOverlay.hidden = true;
+  E.modalFrame.srcdoc = "";
+  if (modalHistoryPushed) {
+    modalHistoryPushed = false;
+    if (!fromPopstate) history.back();
+  }
+}
+
+window.addEventListener("popstate", () => {
+  if (!E.modalOverlay.hidden) closeReportModal(true);
+});
+
+E.modalCloseBtn.addEventListener("click", () => closeReportModal(false));
+
+E.modalPdfBtn.addEventListener("click", () => {
+  const w = E.modalFrame.contentWindow;
+  if (w) w.print(); else toast("El reporte aún no está listo.");
+});
+
+function loadHtml2Canvas(){
+  return new Promise((resolve, reject) => {
+    if (window.html2canvas) return resolve();
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("No se pudo cargar la librería de imagen (revisa tu conexión)."));
+    document.head.appendChild(s);
+  });
+}
+
+E.modalImgBtn.addEventListener("click", async () => {
+  try {
+    const doc = E.modalFrame.contentDocument;
+    if (!doc || !doc.body) throw new Error("El reporte aún no está listo.");
+    toast("Generando imagen…");
+    await loadHtml2Canvas();
+    const canvas = await window.html2canvas(doc.body, { backgroundColor: "#ffffff", scale: 2, useCORS: true });
+    const a = document.createElement("a");
+    a.download = `${(E.modalTitle.textContent||"reporte").toLowerCase().replace(/[^\w-]+/g,"_")}.png`;
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+  } catch(err){ console.error(err); toast(err.message || "No se pudo generar la imagen."); }
+});
+
+// ── Inicializar ──
+// El Sheet es la única fuente de verdad; no se cachea el listado localmente
+// (así nunca se ve un listado "viejo" al reabrir el archivo).
+["corteRows","corteSource"].forEach(k => localStorage.removeItem(k));
+loadFromSheet();
+
+// ═══ EVENTOS ═══
+function setLoadStatus(big, small, showRetry){
+  E.loadBig.textContent = big;
+  E.loadSmall.textContent = small;
+  E.dropSelectBtn.style.display = showRetry ? "" : "none";
+}
+
+// Lee el Sheet vía gviz/tq usando JSONP (una etiqueta <script>, no fetch()).
+// Esto es clave: fetch() a un dominio externo queda bloqueado por CORS cuando el
+// HTML se abre con doble clic (origen "file://"). Un <script src="..."> NO tiene esa
+// restricción — es la misma técnica que usan por debajo los demás dashboards LIVES
+// conectados a Sheets, y funciona igual desde file:// que desde GitHub Pages.
+function fetchSheetRows(){
+  return new Promise((resolve, reject) => {
+    const cbName = "__gvizCb" + Date.now();
+    const script = document.createElement("script");
+    let settled = false;
+
+    function cleanup(){ delete window[cbName]; script.remove(); clearTimeout(timer); }
+
+    window[cbName] = (data) => {
+      if (settled) return;
+      settled = true; cleanup();
+      if (data.status === "error") {
+        const msg = (data.errors && data.errors[0] && data.errors[0].detailed_message) || "Error leyendo el Sheet.";
+        reject(new Error(msg));
+        return;
+      }
+      const cellText = (c) => {
+        if (!c) return "";
+        if (c.f != null) return c.f;
+        return c.v != null ? String(c.v) : "";
+      };
+      const dataRows = data.table.rows.map(r => (r.c||[]).map(cellText));
+      // Google suele "consumir" la fila 1 como encabezados y dejarla en table.cols[].label
+      // (en vez de en table.rows). Si eso pasó, la reponemos como primera fila para que
+      // normalizeRows() la encuentre igual que si viniera del XLSX.
+      const colLabels = (data.table.cols||[]).map(c => c.label || "");
+      const hasLabels = colLabels.some(h => h.trim());
+      const rows = hasLabels ? [colLabels, ...dataRows] : dataRows;
+      resolve(rows);
+    };
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true; cleanup();
+      reject(new Error("Tiempo de espera agotado leyendo el Sheet. Revisa tu conexión."));
+    }, 15000);
+
+    script.onerror = () => {
+      if (settled) return;
+      settled = true; cleanup();
+      reject(new Error('No se pudo cargar el Sheet. Verifica que esté compartido como "Cualquiera con el enlace: Lector".'));
+    };
+
+    script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&gid=0&_=${Date.now()}`;
+    document.head.appendChild(script);
+  });
+}
+
+async function loadFromSheet(){
+  setLoadStatus("Cargando listado desde Google Sheet…", "Esto puede tardar unos segundos.", false);
+  try {
+    const rows = await fetchSheetRows();
+    const parsed = normalizeRows(rows);
+    if (!parsed.length) throw new Error("El Sheet no tiene filas válidas todavía (PIEZA = CUERPO, sin corte real). Pide a Luisa que pegue el listado del día.");
+    state.rows = parsed;
+    state.sourceName = "Google Sheet — LISTADO_CORTE_PCP";
+    applyFilters();
+    toast(`Actualizado desde Sheet: ${parsed.length} órdenes.`);
+  } catch(err){
+    console.error(err);
+    if (state.rows.length) {
+      // Ya había datos (de esta misma sesión): los dejamos visibles y solo avisamos.
+      toast(err.message || "No se pudo actualizar desde el Sheet.");
+    } else {
+      setLoadStatus("No se pudo cargar el Sheet", err.message || "Revisa tu conexión o los permisos del Sheet.", true);
+    }
+  }
+}
+
+E.dropSelectBtn.addEventListener("click", loadFromSheet); // botón "Reintentar"
+E.changeFileBtn.addEventListener("click", loadFromSheet);  // botón "Actualizar desde Sheet"
+
+E.dateFilter.addEventListener("change", () => {
+  const sched = computeDailySchedule();
+  const dates = [...new Set(sched.flatMap(o => o.alloc.map(a => a.date)))].sort();
+  if (E.dateFilter.value) renderScheduleByDate(sched, E.dateFilter.value);
+  else renderScheduleGantt(sched, dates);
+});
+E.scheduleExportBtn.addEventListener("click", generateScheduleReport);
+
+[E.searchInput, E.priorityFilter, E.routeFilter, E.typeFilter]
+  .forEach(x => x.addEventListener("input", applyFilters));
+
+E.reposoBtn.addEventListener("click", () => generateProgramReport("reposo"));
+E.envioBtn.addEventListener("click",  () => generateProgramReport("envio"));
+
+E.clearBtn.addEventListener("click", () => {
+  if (!confirm("¿Limpiar datos importados y ajustes guardados?")) return;
+  state.rows = []; state.filtered = []; state.sourceName = ""; state.prefs = {};
+  ["corteRows","corteSource","cortePrefs"].forEach(k => localStorage.removeItem(k));
+  applyFilters(); toast("Tablero limpio.");
+});
+
+E.dashboardBtn.addEventListener("click", generateDashboard);
+
+// ═══ PROGRAMAS EXPORTABLES ═══
+function generateProgramReport(kind) {
+  const dk = kind === "reposo" ? "reposoDate" : "envioDate";
+  const label = kind === "reposo" ? "Programa de Reposo" : "Programa de Envíos a Lavandería";
+  const kgLabel = kind === "reposo" ? "Kg reposo" : "Kg envío";
+  const rows = state.rows.filter(r => getPref(r.id)[dk]);
+  if (!rows.length) return toast(kind==="reposo" ? "No hay O/C con fecha de reposo." : "No hay O/C con fecha de envío.");
+
+  const groups = groupBy(rows, r => getPref(r.id)[dk]).sort((a,b) => a.key.localeCompare(b.key));
+  const totalKg = rows.reduce((s,r) => s+(Number(r.kg)||0), 0);
+
+  const sections = groups.map(({key,rows:g}) => {
+    const dateLabel = fmtShortEs(parseISO(key)) || key;
+    const subtotal = g.reduce((s,r) => s+(Number(r.kg)||0), 0);
+    const trs = g.map(r => `<tr>
+      <td>${priorityPill(r.prioridad)}</td>
+      <td>${esc(r.grupo)}</td>
+      <td>${esc(r.estilo)}</td>
+      <td>${esc(r.oc)}</td>
+      <td>${esc(r.partida)}</td>
+      <td>${esc(r.tela||"")}</td>
+      <td>${esc(r.color)}</td>
+      <td style="text-align:right">${fmtN(r.kg,2)}</td>
+    </tr>`).join("");
+    return `
+      <div class="datebar"><span>${esc(dateLabel)}</span><span class="sub">${g.length} O/C · ${fmtN(subtotal,1)} kg</span></div>
+      <table>
+        <thead><tr><th>Prioridad</th><th>Grupo</th><th>Estilo</th><th>O/C</th><th>Partida</th><th>Tela</th><th>Color</th><th style="text-align:right">${kgLabel}</th></tr></thead>
+        <tbody>${trs}</tbody>
+      </table>`;
+  }).join("");
+
+  const fechaHoy = new Date().toLocaleDateString("es-PE",{day:"2-digit",month:"long",year:"numeric"});
+  const html = `<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><title>${esc(label)} — ${fechaHoy}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font:12px/1.35 Calibri,Arial,sans-serif;color:#222;background:#fff;}
+.header{background:#0E3B36;border-bottom:3px solid #10B981;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;}
+.hl{display:flex;align-items:center;gap:14px;}
+.hd{width:1px;height:30px;background:rgba(255,255,255,.35);}
+.ht{color:#fff;font-size:13px;font-weight:700;}
+.hs{color:#F1F6F4;font-size:10px;margin-top:1px;}
+.hdate{color:#F1F6F4;font-size:11px;text-align:right;}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);background:#F1F6F4;border-bottom:2px solid #0F7A5A;}
+.kpi{padding:10px 14px;border-right:1px solid #DCE5E2;text-align:center;}
+.kpi label{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:#5F726C;margin-bottom:3px;}
+.kpi strong{font-size:18px;font-weight:700;color:#0F7A5A;}
+.content{padding:12px 20px;}
+.datebar{display:flex;justify-content:space-between;align-items:baseline;background:#0F7A5A;color:#fff;font-weight:700;font-size:12px;padding:7px 10px;margin-top:16px;border-radius:5px 5px 0 0;}
+.datebar .sub{font-weight:400;font-size:10px;opacity:.9;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+th{background:#F1F6F4;color:#5F726C;font-weight:700;text-transform:uppercase;font-size:8.5px;letter-spacing:.3px;padding:5px 4px;border-bottom:1px solid #DCE5E2;text-align:left;}
+td{padding:4px;border-bottom:1px solid #eee;vertical-align:top;}
+tr:nth-child(even) td{background:#F8FBFA;}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:9px;font-weight:700;border:1px solid #DCE5E2;}
+.pill.urgent{color:#DC2626;background:#FEE2E2;border-color:#FCA5A5;}
+.pill.soft{color:#5F726C;background:#F1F6F4;}
+.foot{padding:8px 20px;font-size:10px;color:#5F726C;border-top:1px solid #DCE5E2;text-align:center;margin-top:16px;}
+@media print{
+  @page{size:A4 portrait;margin:8mm 10mm;}
+  body{font-size:10px;}
+  .header,.kpis,.datebar{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  tr{page-break-inside:avoid;}
+}
+</style></head><body>
+<header class="header">
+  <div class="hl">
+    ${LOGO_SVG}
+    <div class="hd"></div>
+    <div><div class="ht">${esc(label)} — PCP</div><div class="hs">Fuente: ${esc(state.sourceName)}</div></div>
+  </div>
+  <div class="hdate">${fechaHoy}</div>
+</header>
+<div class="kpis">
+  <div class="kpi"><label>Total O/C</label><strong>${rows.length}</strong></div>
+  <div class="kpi"><label>Total Kg</label><strong>${fmtN(totalKg,1)}</strong></div>
+</div>
+<div class="content">${sections}</div>
+<div class="foot">${esc(label)} · LIVES · ${fechaHoy}</div>
+</body></html>`;
+
+  openReportModal(label, html);
+}
+
+// ═══ REPORTE VISUAL: Programación por capacidad diaria ═══
+function generateScheduleReport(){
+  const sched = computeDailySchedule();
+  if (!sched.length) return toast("Aún no hay órdenes de planta con módulo y fecha programada.");
+
+  const selDate = E.dateFilter.value;
+  const fechaHoy = new Date().toLocaleDateString("es-PE",{day:"2-digit",month:"long",year:"numeric"});
+  let title, bodyHtml, wide = false;
+
+  if (selDate) {
+    // Reporte de un solo día: agrupado por módulo, con subtotal vs. capacidad
+    title = `Programación diaria — ${fmtShortEs(parseISO(selDate))}`;
+    const dayOrders = sched.map(o => {
+      const a = o.alloc.find(x => x.date === selDate);
+      return a ? {...o, dayMin:a.minutes} : null;
+    }).filter(Boolean);
+    const ordered = orderedModulesFor(dayOrders);
+    const groups = groupBy(dayOrders, o => o.modulo).sort((a,b) => ordered.indexOf(a.key) - ordered.indexOf(b.key));
+
+    bodyHtml = groups.map(({key,rows:g}) => {
+      const totalDay = g.reduce((s,o) => s+o.dayMin, 0);
+      const over = totalDay > MODULE_CAP;
+      const trs = g.map(o => {
+        const r = o.row, p = getPref(r.id);
+        return `<tr>
+          <td>${esc(r.grupo)}</td><td>${esc(r.estilo)}</td><td>${esc(r.color)}</td>
+          <td style="text-align:right">${fmtN(r.pdas,0)}</td>
+          <td>${esc(r.oc)}</td><td>${esc(r.partida)}</td>
+          <td style="text-align:right">${fmtN(r.kg,2)}</td>
+          <td style="text-align:right">${fmtN(r.minProg,3)}</td>
+          <td style="text-align:center">${r.rutaOk?"✓":""}</td>
+          <td style="text-align:center">${r.tizOk?"✓":""}</td>
+          <td style="text-align:center">${r.medidasOk?"✓":""}</td>
+          <td>${esc(fmtShortEs(parseISO(p.reposoDate)))}</td>
+          <td style="text-align:right;font-weight:700;color:#0F7A5A">${fmtN(o.dayMin,0)}</td>
+        </tr>`;
+      }).join("");
+      return `
+        <div class="modbar"><span>${esc(key)}</span><span class="sub">${g.length} O/C · ${fmtN(totalDay,0)} / ${fmtN(MODULE_CAP,1)} min${over?' ⚠ sobre capacidad':''}</span></div>
+        <table>
+          <thead><tr><th>Grupo</th><th>Estilo</th><th>Color</th><th style="text-align:right">Prendas</th><th>O/C</th><th>Partida</th><th style="text-align:right">Kg</th><th style="text-align:right">Min prog</th><th>Ruta</th><th>Tiz</th><th>Medidas</th><th>Reposo</th><th style="text-align:right">Min. ese día</th></tr></thead>
+          <tbody>${trs}</tbody>
+        </table>`;
+    }).join("");
+  } else {
+    // Reporte de todas las fechas: tipo Gantt, una columna por día
+    wide = true;
+    title = "Programación por capacidad diaria — todas las fechas";
+    const dates = [...new Set(sched.flatMap(o => o.alloc.map(a => a.date)))].sort();
+    const ordered = orderedModulesFor(sched);
+    const groups = groupBy(sched, o => o.modulo).sort((a,b) => ordered.indexOf(a.key) - ordered.indexOf(b.key));
+
+    const trs = [];
+    groups.forEach(({key,rows:g}) => {
+      g.sort((a,b) => (a.alloc[0]?.date||"").localeCompare(b.alloc[0]?.date||""));
+      g.forEach(o => {
+        const r = o.row, byDate = Object.fromEntries(o.alloc.map(a => [a.date, a.minutes]));
+        trs.push(`<tr>
+          <td style="font-weight:700;color:#0F7A5A">${esc(key)}</td>
+          <td>${esc(r.grupo)}</td><td>${esc(r.estilo)}</td><td>${esc(r.color)}</td>
+          <td style="text-align:right">${fmtN(r.pdas,0)}</td>
+          <td>${esc(r.oc)}</td><td>${esc(r.partida)}</td>
+          <td style="text-align:right;font-weight:700">${fmtN(o.totalMin,0)}</td>
+          ${dates.map(d => `<td style="text-align:right">${byDate[d]!=null ? fmtN(byDate[d],0) : ""}</td>`).join("")}
+        </tr>`);
+      });
+    });
+    bodyHtml = `<table>
+      <thead><tr><th>Módulo</th><th>Grupo</th><th>Estilo</th><th>Color</th><th style="text-align:right">Prendas</th><th>O/C</th><th>Partida</th><th style="text-align:right">Min. total</th>${dates.map(d => `<th style="text-align:right">${fmtShortEs(parseISO(d))}</th>`).join("")}</tr></thead>
+      <tbody>${trs.join("")}</tbody>
+    </table>`;
+  }
+
+  const html = `<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><title>${esc(title)}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font:12px/1.35 Calibri,Arial,sans-serif;color:#222;background:#fff;}
+.header{background:#0E3B36;border-bottom:3px solid #10B981;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;}
+.hl{display:flex;align-items:center;gap:14px;}
+.hd{width:1px;height:30px;background:rgba(255,255,255,.35);}
+.ht{color:#fff;font-size:13px;font-weight:700;}
+.hs{color:#F1F6F4;font-size:10px;margin-top:1px;}
+.hdate{color:#F1F6F4;font-size:11px;text-align:right;}
+.content{padding:14px 20px;}
+.modbar{display:flex;justify-content:space-between;align-items:baseline;background:#0F7A5A;color:#fff;font-weight:700;font-size:12px;padding:7px 10px;margin-top:16px;border-radius:5px 5px 0 0;}
+.modbar .sub{font-weight:400;font-size:10px;opacity:.9;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+th{background:#F1F6F4;color:#5F726C;font-weight:700;text-transform:uppercase;font-size:8.5px;letter-spacing:.3px;padding:5px 4px;border-bottom:1px solid #DCE5E2;text-align:left;}
+td{padding:4px;border-bottom:1px solid #eee;vertical-align:top;}
+tr:nth-child(even) td{background:#F8FBFA;}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:9px;font-weight:700;border:1px solid #DCE5E2;}
+.pill.urgent{color:#DC2626;background:#FEE2E2;border-color:#FCA5A5;}
+.pill.soft{color:#5F726C;background:#F1F6F4;}
+.foot{padding:8px 20px;font-size:10px;color:#5F726C;border-top:1px solid #DCE5E2;text-align:center;margin-top:16px;}
+@media print{
+  @page{size:A4 ${wide?"landscape":"portrait"};margin:8mm 10mm;}
+  body{font-size:9.5px;}
+  .header,.modbar{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  tr{page-break-inside:avoid;}
+}
+</style></head><body>
+<header class="header">
+  <div class="hl">
+    ${LOGO_SVG}
+    <div class="hd"></div>
+    <div><div class="ht">${esc(title)}</div><div class="hs">Fuente: ${esc(state.sourceName)} · Capacidad 1,346.6 min/módulo/día</div></div>
+  </div>
+  <div class="hdate">${fechaHoy}</div>
+</header>
+<div class="content">${bodyHtml}</div>
+<div class="foot">Programación por capacidad diaria · LIVES · ${fechaHoy}</div>
+</body></html>`;
+
+  openReportModal(title, html);
+}
+
+// ═══ DASHBOARD (nueva pestaña, Chart.js) ═══
+function generateDashboard() {
+  if (!state.rows.length) return toast("Importa el listado primero.");
+  const rows = state.filtered.length ? state.filtered : state.rows;
+  const total = rows.length || 1;
+
+  // por prioridad
+  const byPri = {};
+  rows.forEach(r => { const k = r.prioridad || "Sin prioridad"; byPri[k] = (byPri[k]||0)+1; });
+  const priLabels = Object.keys(byPri), priData = Object.values(byPri);
+  const priColors = priLabels.map(l => clean(l).includes("URGENTE") ? "#DC2626" : clean(l).includes("1") ? "#0F7A5A" : clean(l).includes("2") ? "#4E6B78" : "#B45309");
+
+  // tipo
+  const servN = rows.filter(r => (getPref(r.id).tipo||"Servicio") === "Servicio").length;
+  const plantN = rows.length - servN;
+
+  // avance
+  const rutaPct   = Math.round(pct(rows,"rutaOk"));
+  const tizPct    = Math.round(pct(rows,"tizOk"));
+  const medPct    = Math.round(pct(rows,"medidasOk"));
+
+  // módulos
+  const modMap = {};
+  rows.forEach(r => { const p=getPref(r.id); if(p.tipo==="Planta"&&p.modulo) modMap[p.modulo]=(modMap[p.modulo]||0)+(Number(r.minProg)||0); });
+  const modLabels = Object.keys(modMap), modData = Object.values(modMap);
+
+  // por mes despacho
+  const despMap = {};
+  rows.forEach(r => {
+    if (!r.fechaDespacho) return;
+    const pts = r.fechaDespacho.split("/");
+    if (pts.length===3) { const k=`${pts[1]}/${pts[2].slice(2)}`; despMap[k]=(despMap[k]||0)+1; }
+  });
+  const despLabels = Object.keys(despMap).sort(), despData = despLabels.map(k=>despMap[k]);
+
+  const totalPdas = rows.reduce((s,r)=>s+(Number(r.pdas)||0),0);
+  const totalKg   = rows.reduce((s,r)=>s+(Number(r.kg)||0),0);
+  const uniqueOc  = new Set(rows.map(r=>r.oc)).size;
+  const fechaHoy  = new Date().toLocaleDateString("es-PE",{day:"2-digit",month:"long",year:"numeric"});
+
+  const html = `<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Corte — LIVES</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
+<style>
+:root{--petrol:#0E3B36;--emer:#10B981;--sage:#0F7A5A;--sage-dark:#0B815E;--slate:#4E6B78;--rose:#DC2626;--tan:#F59E0B;--warm:#DCE5E2;--warm-light:#F1F6F4;--stone:#5F726C;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font:14px/1.4 Calibri,Arial,sans-serif;background:#fff;color:#1A1A1A;}
+.header{background:var(--petrol);border-bottom:3px solid var(--emer);min-height:72px;display:flex;align-items:center;padding:0 28px;gap:16px;flex-wrap:wrap;}
+.hd{width:1px;height:34px;background:rgba(255,255,255,.35);}
+.ht{color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px;}
+.hs{color:var(--warm-light);font-size:12px;margin-top:2px;}
+.hdate{color:var(--warm-light);font-size:12px;margin-left:auto;}
+main{padding:20px 28px 48px;max-width:1380px;margin:0 auto;}
+.kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+.kpi{background:#fff;border:1px solid var(--warm);border-radius:8px;padding:16px 18px;flex:1;min-width:130px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.kpi.primary{border:2px solid var(--sage);}
+.kpi .v{font-size:28px;font-weight:700;color:var(--sage);line-height:1.1;}
+.kpi.primary .v{font-size:34px;}
+.kpi .l{font-size:12px;color:#333;margin-top:4px;font-weight:600;}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.grid2b{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.panel{background:#fff;border:1px solid var(--warm);border-radius:8px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.pt{font-size:14px;font-weight:700;color:#1A1A1A;margin-bottom:3px;}
+.ph{font-size:11.5px;color:var(--stone);margin-bottom:14px;}
+.ch{position:relative;width:100%;height:220px;}
+.prog-list{display:grid;gap:16px;margin-top:8px;}
+.prog label{display:flex;justify-content:space-between;font-size:12px;color:var(--stone);margin-bottom:5px;}
+.prog label strong{color:#1A1A1A;}
+.pb{height:11px;background:var(--warm-light);border-radius:99px;overflow:hidden;}
+.pb i{display:block;height:100%;background:var(--sage);border-radius:99px;}
+.foot{text-align:center;font-size:11px;color:var(--stone);margin-top:24px;padding-top:14px;border-top:1px solid var(--warm);}
+@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}}
+</style></head><body>
+<header class="header">
+  ${LOGO_SVG}
+  <div class="hd"></div>
+  <div><div class="ht">Dashboard · Programa de Corte</div><div class="hs">PCP — ${esc(state.sourceName)}</div></div>
+  <div class="hdate">${fechaHoy}</div>
+</header>
+<main>
+  <div class="kpis">
+    <div class="kpi primary"><div class="v">${rows.length}</div><div class="l">Órdenes</div></div>
+    <div class="kpi"><div class="v">${uniqueOc}</div><div class="l">O/C únicas</div></div>
+    <div class="kpi"><div class="v">${fmtN(totalPdas,0)}</div><div class="l">Prendas prog.</div></div>
+    <div class="kpi"><div class="v">${fmtN(totalKg,1)}</div><div class="l">Kg programados</div></div>
+    <div class="kpi"><div class="v">${rutaPct}%</div><div class="l">Ruta OK</div></div>
+    <div class="kpi"><div class="v">${medPct}%</div><div class="l">Medidas OK</div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><div class="pt">Órdenes por prioridad</div><div class="ph">Distribución del total filtrado</div><div class="ch"><canvas id="cPri"></canvas></div></div>
+    <div class="panel"><div class="pt">Tipo de corte</div><div class="ph">Servicio vs Planta</div><div class="ch"><canvas id="cTipo"></canvas></div></div>
+  </div>
+  <div class="grid2b">
+    <div class="panel"><div class="pt">Avance de ruta</div><div class="ph">% sobre total filtrado</div>
+      <div class="prog-list">
+        <div class="prog"><label>Ruta — asignación molde pieza<strong>${rutaPct}%</strong></label><div class="pb"><i style="width:${rutaPct}%"></i></div></div>
+        <div class="prog"><label>Tizado<strong>${tizPct}%</strong></label><div class="pb"><i style="width:${tizPct}%"></i></div></div>
+        <div class="prog"><label>Medidas tendido<strong>${medPct}%</strong></label><div class="pb"><i style="width:${medPct}%"></i></div></div>
+      </div>
+    </div>
+    <div class="panel" id="modPanel"><div class="pt">Minutos planta por módulo</div><div class="ph">vs capacidad 1,346.6 min/módulo</div><div class="ch"><canvas id="cMod"></canvas></div></div>
+  </div>
+  ${despLabels.length ? `<div class="panel" style="margin-bottom:16px"><div class="pt">Órdenes por mes de despacho</div><div class="ph">Distribución por MM/AA</div><div class="ch"><canvas id="cDesp"></canvas></div></div>` : ""}
+  <div class="foot">Dashboard generado el ${fechaHoy} · ${esc(state.sourceName)} · Solo órdenes CUERPO sin corte real</div>
+</main>
+<script>
+Chart.defaults.font.family="Calibri,Arial,sans-serif";
+Chart.defaults.font.size=12;
+Chart.defaults.color="#5F726C";
+Chart.defaults.borderColor="#F1F6F4";
+Chart.defaults.plugins.tooltip.backgroundColor="rgba(26,26,26,.95)";
+Chart.defaults.plugins.tooltip.padding=10;
+Chart.defaults.plugins.tooltip.cornerRadius=4;
+
+new Chart(document.getElementById("cPri"),{
+  type:"bar",
+  data:{labels:${JSON.stringify(priLabels)},datasets:[{data:${JSON.stringify(priData)},backgroundColor:${JSON.stringify(priColors)},borderRadius:3,barThickness:16}]},
+  options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{grid:{color:"#F1F6F4"},beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false}}}}
+});
+new Chart(document.getElementById("cTipo"),{
+  type:"doughnut",
+  data:{labels:["Servicio","Planta"],datasets:[{data:[${servN},${plantN}],backgroundColor:["#0F7A5A","#4E6B78"],borderWidth:0}]},
+  options:{plugins:{legend:{position:"bottom",labels:{padding:18}}},cutout:"60%"}
+});
+${modLabels.length
+  ? `new Chart(document.getElementById("cMod"),{type:"bar",data:{labels:${JSON.stringify(modLabels)},datasets:[{label:"Min usados",data:${JSON.stringify(modData)},backgroundColor:"#0F7A5A",borderRadius:3,barThickness:24},{label:"Capacidad (1,346.6)",data:${JSON.stringify(modLabels.map(()=>1346.6))},type:"line",borderColor:"#DC2626",borderWidth:2,borderDash:[5,5],pointRadius:0,backgroundColor:"transparent"}]},options:{plugins:{legend:{position:"bottom",labels:{padding:16}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:"#F1F6F4"}}}}});`
+  : `document.getElementById("modPanel").innerHTML="<div class='pt'>Minutos planta por módulo</div><p style='color:#5F726C;font-size:12px;margin-top:12px'>Asigna módulos a las órdenes de planta para ver este gráfico.</p>";`
+}
+${despLabels.length ? `new Chart(document.getElementById("cDesp"),{type:"bar",data:{labels:${JSON.stringify(despLabels)},datasets:[{data:${JSON.stringify(despData)},backgroundColor:"#4E6B78",borderRadius:3,barThickness:20}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:"#F1F6F4"},ticks:{precision:0}}}}});` : ""}
+<\/script></body></html>`;
+
+  openReportModal("Dashboard — Programa de Corte", html);
+}
+
+// ═══ REPORTE IMPRIMIBLE A4 ═══
+function generateReport() {
+  if (!state.rows.length) return toast("Importa el listado primero.");
+  const rows = state.filtered.length ? state.filtered : state.rows;
+  const fechaHoy = new Date().toLocaleDateString("es-PE",{day:"2-digit",month:"long",year:"numeric"});
+  const totalPdas = rows.reduce((s,r)=>s+(Number(r.pdas)||0),0);
+  const totalKg   = rows.reduce((s,r)=>s+(Number(r.kg)||0),0);
+  const rutaPct   = Math.round(pct(rows,"rutaOk"));
+  const tizPct    = Math.round(pct(rows,"tizOk"));
+  const medPct    = Math.round(pct(rows,"medidasOk"));
+
+  const tbRows = rows.map(r => {
+    const p = getPref(r.id), urg = r.prioridad && clean(r.prioridad).includes("URGENTE");
+    return `<tr>
+      <td${urg?' style="color:#DC2626;font-weight:700"':''}>${esc(r.prioridad||"")}</td>
+      <td style="font-weight:700;color:#0F7A5A">${esc(r.fechaDespacho||"")}</td>
+      <td>${esc(p.tipo||"Serv.")}</td>
+      <td>${esc(r.grupo)}</td>
+      <td>${esc(r.color)}</td>
+      <td>${esc(r.oc)}</td>
+      <td>${esc(r.partida)}</td>
+      <td style="text-align:right">${fmtN(r.kg,2)}</td>
+      <td style="text-align:right">${fmtN(r.pdas,0)}</td>
+      <td style="text-align:right">${fmtN(r.minProg,0)}</td>
+      <td style="text-align:center;color:#0F7A5A">${r.rutaOk?"✓":""}</td>
+      <td style="text-align:center;color:#0F7A5A">${r.tizOk?"✓":""}</td>
+      <td style="text-align:center;color:#0F7A5A">${r.medidasOk?"✓":""}</td>
+      <td>${esc(p.programDate||"")}</td>
+      <td>${esc(p.modulo||"")}</td>
+      <td>${esc((p.tallerCostura||"").split(" ").slice(-2).join(" "))}</td>
+      <td>${esc((p.servicioCorte||"").split(" ").slice(-2).join(" "))}</td>
+      <td>${esc(p.obs||"")}</td>
+    </tr>`;
+  }).join("");
+
+  const html = `<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><title>Programa de Corte — ${fechaHoy}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font:12px/1.35 Calibri,Arial,sans-serif;color:#222;background:#fff;}
+.header{background:#0E3B36;border-bottom:3px solid #10B981;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;}
+.hl{display:flex;align-items:center;gap:14px;}
+.hd{width:1px;height:30px;background:rgba(255,255,255,.35);}
+.ht{color:#fff;font-size:13px;font-weight:700;}
+.hs{color:#F1F6F4;font-size:10px;margin-top:1px;}
+.hdate{color:#F1F6F4;font-size:11px;text-align:right;}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);background:#F1F6F4;border-bottom:2px solid #0F7A5A;}
+.kpi{padding:10px 14px;border-right:1px solid #DCE5E2;text-align:center;}
+.kpi label{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:#5F726C;margin-bottom:3px;}
+.kpi strong{font-size:18px;font-weight:700;color:#0F7A5A;}
+.prog-row{display:flex;gap:24px;padding:8px 20px;background:#F8FBFA;border-bottom:1px solid #DCE5E2;align-items:center;flex-wrap:wrap;}
+.prog{display:flex;align-items:center;gap:8px;font-size:11px;color:#5F726C;}
+.pb{width:80px;height:7px;background:#DCE5E2;border-radius:99px;overflow:hidden;}
+.pb i{display:block;height:100%;background:#0F7A5A;border-radius:99px;}
+.content{padding:12px 20px;}
+h2{font-size:11px;font-weight:700;color:#0B815E;text-transform:uppercase;letter-spacing:.4px;margin:0 0 8px;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+th{background:#F1F6F4;color:#5F726C;font-weight:700;text-transform:uppercase;font-size:8.5px;letter-spacing:.3px;padding:5px 4px;border-bottom:1px solid #DCE5E2;text-align:left;}
+td{padding:4px;border-bottom:1px solid #eee;vertical-align:top;}
+tr:nth-child(even) td{background:#F8FBFA;}
+.foot{padding:8px 20px;font-size:10px;color:#5F726C;border-top:1px solid #DCE5E2;text-align:center;}
+@media print{
+  @page{size:A4 landscape;margin:8mm 10mm;}
+  body{font-size:10px;}
+  .header,.kpis,.prog-row{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  tr{page-break-inside:avoid;}
+}
+</style></head><body>
+<header class="header">
+  <div class="hl">
+    ${LOGO_SVG}
+    <div class="hd"></div>
+    <div><div class="ht">Programa de Corte — PCP</div><div class="hs">Fuente: ${esc(state.sourceName)}</div></div>
+  </div>
+  <div class="hdate">${fechaHoy}<br>${rows.length} órdenes filtradas</div>
+</header>
+<div class="kpis">
+  <div class="kpi"><label>Órdenes</label><strong>${rows.length}</strong></div>
+  <div class="kpi"><label>O/C únicas</label><strong>${new Set(rows.map(r=>r.oc)).size}</strong></div>
+  <div class="kpi"><label>Prendas prog.</label><strong>${fmtN(totalPdas,0)}</strong></div>
+  <div class="kpi"><label>Kg programados</label><strong>${fmtN(totalKg,1)}</strong></div>
+  <div class="kpi"><label>% Ruta OK</label><strong>${rutaPct}%</strong></div>
+  <div class="kpi"><label>% Medidas OK</label><strong>${medPct}%</strong></div>
+</div>
+<div class="prog-row">
+  <span style="font-size:11px;font-weight:700;color:#0B815E;margin-right:4px">Avance:</span>
+  <div class="prog">Ruta <div class="pb"><i style="width:${rutaPct}%"></i></div> ${rutaPct}%</div>
+  <div class="prog">Tizado <div class="pb"><i style="width:${tizPct}%"></i></div> ${tizPct}%</div>
+  <div class="prog">Medidas <div class="pb"><i style="width:${medPct}%"></i></div> ${medPct}%</div>
+</div>
+<div class="content">
+  <h2>Detalle de órdenes — PIEZA = CUERPO · sin corte real</h2>
+  <table>
+    <thead><tr>
+      <th>Prioridad</th><th>Fec. Desp.</th><th>Tipo</th><th>Grupo</th><th>Color</th>
+      <th>O/C</th><th>Partida</th><th style="text-align:right">Kg</th><th style="text-align:right">Prendas</th><th style="text-align:right">Min</th>
+      <th>Ruta</th><th>Tiz</th><th>Med</th>
+      <th>Fecha prog.</th><th>Módulo</th><th>Taller</th><th>Serv. corte</th><th>Obs.</th>
+    </tr></thead>
+    <tbody>${tbRows}</tbody>
+  </table>
+</div>
+<div class="foot">Programa de Corte PCP · LIVES · ${fechaHoy}</div>
+<script>window.onload=()=>window.print();<\/script>
+</body></html>`;
+
+  const w = window.open("","_blank"); w.document.write(html); w.document.close();
+}
+
+// ═══ LÓGICA PRINCIPAL ═══
+function mkDemo(prioridad,grupo,color,estilo,oc,partida,kg,pdas,minProg,rutaOk,tizOk,medidasOk,fechaDespacho){
+  const id=[oc,partida,"CUERPO",grupo].join("|");
+  return{id,prioridad,fechaDespacho,grupo,estilo,color,pieza:"CUERPO",oc,partida,tela:"",kg,pdas,minProg,rutaOk,tizOk,medidasOk,proveedor:"",raw:{}};
+}
+
+function restoreRows(){
+  state.rows = JSON.parse(localStorage.getItem("corteRows") || "[]");
+  state.sourceName = localStorage.getItem("corteSource") || "";
+  applyFilters();
+}
+
+function normalizeRows(rows){
+  const hi = rows.findIndex(r => r.some(c=>clean(c)==="GRUPO") && r.some(c=>clean(c)==="O/C"));
+  if (hi < 0) throw new Error("No encontré la fila de encabezados (necesita columnas GRUPO y O/C).");
+  const hdrs = rows[hi].map(clean);
+  const idx  = Object.fromEntries(hdrs.map((n,i) => [n,i]));
+  const revCOL = {}; Object.entries(COL).forEach(([k,v]) => revCOL[clean(v)] = k);
+  function g(key){ return formatCell(rows[hi+1] ? rows[0] : undefined, false, idx, key); } // placeholder
+
+  return rows.slice(hi+1).map(row => {
+    const get = (key) => formatCell(row[idx[clean(COL[key])]], DATE_KEYS.has(key));
+    const pieza = get("pieza"), oc = get("oc"), grupo = get("grupo");
+    if (!oc || !grupo) return null;
+    if (clean(pieza) !== "CUERPO") return null;
+    if (toNum(get("pdasReales")) > 0) return null;
+    const id = [oc, get("partida"), pieza, grupo].join("|");
+    const rutaTexto = get("rutaTexto"), medidasFecha = get("medidasFecha");
+    const corteDirecto = ["CORTE","CORTE PIEZA","CORTE PIEZAS"].some(p => clean(rutaTexto).startsWith(p));
+    return {
+      id, prioridad:get("prioridad"), fechaDespacho:get("fechaDespacho"),
+      grupo, estilo:get("estilo"), color:get("color")||get("colorTela"),
+      pieza, oc, partida:get("partida"), tela:get("tela"),
+      kg:toNum(get("kg")), pdas:toNum(get("pdas")),
+      pdasReales:toNum(get("pdasReales")), minProg:toNum(get("minProg")),
+      rutaOk:hasDate(get("moldeFecha")), tizOk:hasDate(get("tizFecha")),
+      medidasOk:hasDate(medidasFecha)||corteDirecto,
+      rutaTexto, corteDirecto, proveedor:get("proveedor"),
+      raw:Object.fromEntries(hdrs.map((h,i)=>[h,formatCell(row[i],false)]))
+    };
+  }).filter(Boolean);
+}
+
+// Filtros y render
+function normalizePrefs(){
+  // Corrige datos ya guardados: si una fila tiene módulo asignado pero el tipo
+  // se quedó en "Servicio" (por ejemplo, de antes de este fix), lo pasa a "Planta".
+  let changed = false;
+  Object.keys(state.prefs).forEach(id => {
+    const p = state.prefs[id];
+    if (p.modulo && p.tipo !== "Planta") { p.tipo = "Planta"; changed = true; }
+  });
+  if (changed) localStorage.setItem("cortePrefs", JSON.stringify(state.prefs));
+}
+
+function applyFilters(){
+  normalizePrefs();
+  const q   = clean(E.searchInput.value);
+  const pri = clean(E.priorityFilter.value);
+  const route = E.routeFilter.value;
+  const type  = E.typeFilter.value;
+  const base = state.rows.filter(row => {
+    const p  = getPref(row.id), rt = p.tipo || "Servicio";
+    const hay = clean([row.grupo,row.estilo,row.color,row.oc,row.partida,p.tallerCostura,p.servicioCorte].join(" "));
+    if (q     && !hay.includes(q)) return false;
+    if (pri   && clean(row.prioridad) !== pri) return false;
+    if (type  && rt !== type) return false;
+    if (route === "pendiente" && (row.rutaOk && row.tizOk && row.medidasOk)) return false;
+    if (route === "ruta"     && !row.rutaOk)    return false;
+    if (route === "tiz"      && !row.tizOk)     return false;
+    if (route === "medidas"  && !row.medidasOk) return false;
+    return true;
+  });
+  state.preModuleFiltered = base;
+  state.filtered = (!moduleViewSel || moduleViewSel === "Todos") ? base : base.filter(row => getPref(row.id).modulo === moduleViewSel);
+  render();
+}
+
+function render(){
+  if (state.rows.length) {
+    E.dropZone.style.display = "none";
+    E.fileBar.style.display = "flex";
+    E.appBody.style.display = "";
+    E.fileBarName.textContent = state.sourceName || "—";
+  } else {
+    E.dropZone.style.display = "";
+    E.fileBar.style.display = "none";
+    E.appBody.style.display = "none";
+  }
+
+  const showGrouped = moduleViewSel === "Todos";
+  E.groupedWrap.hidden = !showGrouped;
+  E.flatWrap.hidden = showGrouped;
+
+  if (showGrouped) {
+    renderGroupedModuleTable();
+  } else {
+    E.table.hidden = !state.filtered.length;
+    E.empty.hidden = !!state.filtered.length;
+    const frag = document.createDocumentFragment();
+    E.body.innerHTML = "";
+    state.filtered.forEach(row => frag.appendChild(renderRow(row)));
+    E.body.appendChild(frag);
+  }
+
+  E.sourceHint.textContent = state.sourceName
+    ? `${state.sourceName} · ${state.rows.length} filas cargadas`
+    : "Importa el listado para comenzar.";
+  renderModuleTabs();
+  renderSchedulePanel();
+  renderStats();
+}
+
+function renderRow(row){
+  const p = getPref(row.id);
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td class="compact">${priorityPill(row.prioridad)}</td>
+    <td class="desp compact">${esc(row.fechaDespacho||"")}</td>
+    <td></td>
+    <td class="compact">${esc(row.grupo)}</td>
+    <td class="compact">${esc(row.estilo)}</td>
+    <td>${esc(row.color)}</td>
+    <td class="compact">${esc(row.oc)}</td>
+    <td class="compact">${esc(row.partida)}</td>
+    <td class="num">${fmtN(row.kg)}</td>
+    <td class="num">${fmtN(row.pdas,0)}</td>
+    <td class="num">${fmtN(row.minProg)}</td>
+    <td class="compact">${okPill(row.rutaOk)}</td>
+    <td class="compact">${okPill(row.tizOk)}</td>
+    <td class="compact">${okPill(row.medidasOk)}</td>
+    <td></td><td></td><td></td><td></td><td></td><td></td><td></td>`;
+  tr.children[2].appendChild(typeToggle(row.id, p.tipo||"Servicio"));
+  tr.children[14].appendChild(mkDateInput(row.id,"programDate",  p.programDate||""));
+  tr.children[15].appendChild(mkSelect(row.id,"modulo",         p.modulo||"",       MODULES,  "Módulo",  "small-sel"));
+  tr.children[16].appendChild(mkSelect(row.id,"tallerCostura",  p.tallerCostura||"",SEWING,   "Taller",  "wide-sel"));
+  tr.children[17].appendChild(mkSelect(row.id,"servicioCorte",  p.servicioCorte||"",CUTTING,  "Servicio","wide-sel"));
+  tr.children[18].appendChild(mkDateInput(row.id,"reposoDate",  p.reposoDate||""));
+  tr.children[19].appendChild(mkDateInput(row.id,"envioDate",   p.envioDate||""));
+  const obs = document.createElement("input");
+  obs.className = "obs"; obs.type = "text"; obs.value = p.obs||""; obs.placeholder = "Observación";
+  obs.addEventListener("input", () => setPref(row.id,{obs:obs.value}));
+  tr.children[20].appendChild(obs);
+  return tr;
+}
+
+function typeToggle(id,cur){
+  const w = document.createElement("div"); w.className = "type-toggle";
+  ["Servicio","Planta"].forEach(t => {
+    const b = document.createElement("button");
+    b.textContent = t; b.className = cur===t ? "active" : "";
+    b.addEventListener("click", () => {
+      const upd = {tipo:t};
+      if (t === "Servicio") upd.modulo = ""; // si vuelve a Servicio, ya no aplica módulo de planta
+      setPref(id,upd);
+      applyFilters();
+    });
+    w.appendChild(b);
+  });
+  return w;
+}
+function mkDateInput(id,key,cur){
+  const i = document.createElement("input"); i.type="date"; i.className="date-in"; i.value=cur;
+  i.addEventListener("input", () => { setPref(id,{[key]:i.value}); renderStats(); });
+  return i;
+}
+function mkSelect(id,key,cur,opts,ph,cls){
+  const s = document.createElement("select"); s.className = cls;
+  s.innerHTML = `<option value="">${esc(ph)}</option>` + opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
+  s.value = cur;
+  s.addEventListener("input", () => {
+    const upd = {[key]: s.value};
+    if (key === "modulo" && s.value) upd.tipo = "Planta"; // asignar módulo implica que la orden es de Planta
+    setPref(id, upd);
+    applyFilters();
+  });
+  return s;
+}
+
+function renderStats(){
+  const rows = state.filtered, total = rows.length||1;
+  const uOc  = new Set(rows.map(r=>r.oc)).size;
+  const pdas  = rows.reduce((s,r)=>s+(Number(r.pdas)||0),0);
+  const kg    = rows.reduce((s,r)=>s+(Number(r.kg)||0),0);
+  const serv  = rows.filter(r=>(getPref(r.id).tipo||"Servicio")==="Servicio").length;
+  E.statRows.textContent     = String(rows.length);
+  E.statOc.textContent       = String(uOc);
+  E.statPdas.textContent     = fmtN(pdas,0);
+  E.statKg.textContent       = fmtN(kg,2);
+  E.statServicio.textContent = `${Math.round(serv/total*100)}%`;
+  E.statPlanta.textContent   = `${Math.round((rows.length-serv)/total*100)}%`;
+  setBar(E.barRuta,    pct(rows,"rutaOk"));
+  setBar(E.barTiz,     pct(rows,"tizOk"));
+  setBar(E.barMedidas, pct(rows,"medidasOk"));
+  renderPlanning(rows);
+}
+
+function renderPlanning(rows){
+  // Módulos (planta)
+  const mr = rows.filter(r => (getPref(r.id).tipo||"")==="Planta" && getPref(r.id).programDate && getPref(r.id).modulo);
+  const gm = groupBy(mr, r => `${getPref(r.id).programDate}|${getPref(r.id).modulo}`);
+  E.moduleSummary.innerHTML = gm.length
+    ? gm.map(({key,rows:g}) => {
+        const [date,mod]=key.split("|"), min=sumMin(g), pp=Math.round(min/MODULE_CAP*100), over=min>MODULE_CAP?" over":"";
+        return `<div class="sum-row"><span>${esc(shortDate(date))} ${esc(mod)}</span><strong>${fmtN(min,0)} / 1,346.6</strong></div><div class="cap-bar${over}"><i style="width:${Math.min(100,pp)}%"></i></div>`;
+      }).join("")
+    : `<div class="hint">Asigna fecha y módulo a las órdenes de planta.</div>`;
+
+  // Servicios de corte
+  const sr = rows.filter(r => (getPref(r.id).tipo||"Servicio")==="Servicio" && getPref(r.id).servicioCorte);
+  const gs = groupBy(sr, r => getPref(r.id).servicioCorte);
+  E.serviceSummary.innerHTML = gs.length
+    ? gs.map(({key,rows:g}) => `<div class="sum-row"><span>${esc(key)}</span><strong>${g.length} O/C · ${fmtN(sumMin(g),0)} min</strong></div>`).join("")
+    : `<div class="hint">Asigna servicios de corte a las órdenes externas.</div>`;
+
+  // Reposo y envíos
+  const nReposo = rows.filter(r=>getPref(r.id).reposoDate).length;
+  const nEnvio  = rows.filter(r=>getPref(r.id).envioDate).length;
+  const nSin    = rows.filter(r=>!getPref(r.id).programDate&&!getPref(r.id).envioDate).length;
+  E.dateSummary.innerHTML = `
+    <div class="sum-row"><span>Con fecha de reposo</span><strong>${nReposo}</strong></div>
+    <div class="sum-row"><span>Con envío a servicio</span><strong>${nEnvio}</strong></div>
+    <div class="sum-row"><span>Sin programar / envío</span><strong>${nSin}</strong></div>`;
+}
+
+// ── Filtro por módulo (pestañas sobre el Tablero diario) ──
+// "Todos los módulos" muestra la vista agrupada (imagen de referencia);
+// una pestaña de módulo específico filtra el tablero editable a solo esas filas.
+function usedModules(){
+  const planta = state.preModuleFiltered.filter(r => (getPref(r.id).tipo||"")==="Planta" && getPref(r.id).modulo);
+  const used = [...new Set(planta.map(r => getPref(r.id).modulo))];
+  return { planta, ordered: MODULES.filter(m => used.includes(m)).concat(used.filter(m => !MODULES.includes(m))) };
+}
+
+function renderModuleTabs(){
+  const { planta, ordered } = usedModules();
+
+  if (!planta.length) { E.modTabs.innerHTML = ""; return; } // aún nada asignado: no mostrar filtro
+
+  if (moduleViewSel && moduleViewSel !== "Todos" && !ordered.includes(moduleViewSel)) moduleViewSel = null;
+
+  const tabs = [`<button type="button" class="modtab${moduleViewSel==="Todos"?" active":""}" data-mod="Todos">Todos los módulos (${planta.length})</button>`]
+    .concat(ordered.map(m => {
+      const n = planta.filter(r => getPref(r.id).modulo === m).length;
+      return `<button type="button" class="modtab${moduleViewSel===m?" active":""}" data-mod="${esc(m)}">${esc(m)} (${n})</button>`;
+    }));
+  E.modTabs.innerHTML = tabs.join("");
+  E.modTabs.querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", () => {
+      const val = b.dataset.mod;
+      moduleViewSel = (moduleViewSel === val) ? null : val; // clic de nuevo sobre la activa = quitar filtro
+      applyFilters(); // re-filtra el tablero y vuelve a pintar todo (incluye tabs y vista agrupada)
+    });
+  });
+}
+
+// Vista agrupada (rowspan por módulo) — solo se pinta cuando moduleViewSel === "Todos"
+function renderGroupedModuleTable(){
+  const { planta, ordered } = usedModules();
+
+  E.modBody.innerHTML = "";
+  if (!planta.length) {
+    E.modBody.innerHTML = `<tr><td colspan="9" class="hint" style="padding:16px;text-align:center;">Aún no hay órdenes de planta con módulo asignado.</td></tr>`;
+    return;
+  }
+
+  const groups = groupBy(planta, r => getPref(r.id).modulo)
+    .sort((a,b) => ordered.indexOf(a.key) - ordered.indexOf(b.key));
+
+  const frag = document.createDocumentFragment();
+  groups.forEach(({key,rows:g}, gi) => {
+    g.forEach((row,i) => {
+      const p = getPref(row.id);
+      const tr = document.createElement("tr");
+      if (i===0 && gi>0) tr.className = "modgroup-start";
+      tr.innerHTML = `
+        ${i===0 ? `<td class="modcell" rowspan="${g.length}">${esc(key)}</td>` : ""}
+        <td>${priorityPill(row.prioridad)}</td>
+        <td>${esc(row.grupo)}</td>
+        <td>${esc(row.estilo)}</td>
+        <td>${esc(row.color)}</td>
+        <td>${esc(row.oc)}</td>
+        <td></td>
+        <td></td>
+        <td class="num">${fmtN(row.minProg,0)}</td>`;
+      const off = i===0 ? 1 : 0; // celda extra de módulo solo en la primera fila del grupo
+      tr.children[5+off].appendChild(mkSelect(row.id,"tallerCostura", p.tallerCostura||"", SEWING, "Taller", "wide-sel"));
+      tr.children[6+off].appendChild(mkDateInput(row.id,"programDate", p.programDate||""));
+      frag.appendChild(tr);
+    });
+  });
+  E.modBody.appendChild(frag);
+}
+
+// ═══ PANEL "Programación por capacidad diaria" ═══
+function orderedModulesFor(list){
+  const used = [...new Set(list.map(o => o.modulo))];
+  return MODULES.filter(m => used.includes(m)).concat(used.filter(m => !MODULES.includes(m)));
+}
+
+function renderSchedulePanel(){
+  const sched = computeDailySchedule();
+  const dates = [...new Set(sched.flatMap(o => o.alloc.map(a => a.date)))].sort();
+
+  const cur = E.dateFilter.value;
+  E.dateFilter.innerHTML = `<option value="">Todas las fechas</option>` +
+    dates.map(d => `<option value="${d}">${fmtShortEs(parseISO(d))}</option>`).join("");
+  E.dateFilter.value = dates.includes(cur) ? cur : "";
+
+  if (!sched.length) {
+    E.scheduleHead.innerHTML = "";
+    E.scheduleBody.innerHTML = `<tr><td class="hint" style="padding:16px;text-align:center;">Aún no hay órdenes de planta con módulo y fecha programada.</td></tr>`;
+    return;
+  }
+
+  const selDate = E.dateFilter.value;
+  if (selDate) renderScheduleByDate(sched, selDate);
+  else renderScheduleGantt(sched, dates);
+}
+
+// Vista "Todas las fechas": una columna por fecha, minutos de esa orden ese día
+function renderScheduleGantt(sched, dates){
+  E.scheduleHead.innerHTML = `
+    <th style="width:90px;">Módulo</th><th>Grupo</th><th>Estilo</th><th>Color</th><th class="num">Prendas</th><th>O/C</th><th>Partida</th>
+    <th class="num">Kg</th><th class="num">Min prog</th><th>Ruta</th><th>Tiz</th><th>Medidas</th><th>Reposo</th>
+    <th class="num">Min. total</th>${dates.map(d => `<th class="num">${fmtShortEs(parseISO(d))}</th>`).join("")}`;
+
+  const ordered = orderedModulesFor(sched);
+  const groups = groupBy(sched, o => o.modulo).sort((a,b) => ordered.indexOf(a.key) - ordered.indexOf(b.key));
+
+  const frag = document.createDocumentFragment();
+  groups.forEach(({key,rows:g}, gi) => {
+    g.sort((a,b) => (a.alloc[0]?.date||"").localeCompare(b.alloc[0]?.date||""));
+    g.forEach((o,i) => {
+      const r = o.row, p = getPref(r.id);
+      const byDate = Object.fromEntries(o.alloc.map(a => [a.date, a.minutes]));
+      const tr = document.createElement("tr");
+      if (i===0 && gi>0) tr.className = "modgroup-start";
+      tr.innerHTML = `
+        ${i===0 ? `<td class="modcell" rowspan="${g.length}">${esc(key)}</td>` : ""}
+        <td>${esc(r.grupo)}</td>
+        <td>${esc(r.estilo)}</td>
+        <td>${esc(r.color)}</td>
+        <td class="num">${fmtN(r.pdas,0)}</td>
+        <td>${esc(r.oc)}</td>
+        <td>${esc(r.partida)}</td>
+        <td class="num">${fmtN(r.kg,2)}</td>
+        <td class="num">${fmtN(r.minProg,3)}</td>
+        <td>${okPill(r.rutaOk)}</td>
+        <td>${okPill(r.tizOk)}</td>
+        <td>${okPill(r.medidasOk)}</td>
+        <td>${esc(fmtShortEs(parseISO(p.reposoDate)))}</td>
+        <td class="num">${fmtN(o.totalMin,0)}</td>
+        ${dates.map(d => `<td class="num">${byDate[d]!=null ? fmtN(byDate[d],0) : ""}</td>`).join("")}`;
+      frag.appendChild(tr);
+    });
+  });
+  E.scheduleBody.innerHTML = "";
+  E.scheduleBody.appendChild(frag);
+}
+
+// Vista de un día puntual: agrupado por módulo (rowspan), con el subtotal de minutos de ese día
+function renderScheduleByDate(sched, selDate){
+  const dayOrders = sched.map(o => {
+    const a = o.alloc.find(x => x.date === selDate);
+    return a ? {...o, dayMin:a.minutes} : null;
+  }).filter(Boolean);
+
+  E.scheduleHead.innerHTML = `
+    <th style="width:90px;">Módulo</th><th>Grupo</th><th>Estilo</th><th>Color</th><th class="num">Prendas</th><th>O/C</th><th>Partida</th>
+    <th class="num">Kg</th><th class="num">Min prog</th><th>Ruta</th><th>Tiz</th><th>Medidas</th><th>Reposo</th>
+    <th class="num">Min. ese día</th>`;
+
+  if (!dayOrders.length) {
+    E.scheduleBody.innerHTML = `<tr><td colspan="14" class="hint" style="padding:16px;text-align:center;">No hay órdenes programadas ese día.</td></tr>`;
+    return;
+  }
+
+  const ordered = orderedModulesFor(dayOrders);
+  const groups = groupBy(dayOrders, o => o.modulo).sort((a,b) => ordered.indexOf(a.key) - ordered.indexOf(b.key));
+
+  const frag = document.createDocumentFragment();
+  groups.forEach(({key,rows:g}, gi) => {
+    const totalDay = g.reduce((s,o) => s+o.dayMin, 0);
+    g.forEach((o,i) => {
+      const r = o.row, p = getPref(r.id);
+      const tr = document.createElement("tr");
+      if (i===0 && gi>0) tr.className = "modgroup-start";
+      tr.innerHTML = `
+        ${i===0 ? `<td class="modcell" rowspan="${g.length}">${esc(key)}</td>` : ""}
+        <td>${esc(r.grupo)}</td>
+        <td>${esc(r.estilo)}</td>
+        <td>${esc(r.color)}</td>
+        <td class="num">${fmtN(r.pdas,0)}</td>
+        <td>${esc(r.oc)}</td>
+        <td>${esc(r.partida)}</td>
+        <td class="num">${fmtN(r.kg,2)}</td>
+        <td class="num">${fmtN(r.minProg,3)}</td>
+        <td>${okPill(r.rutaOk)}</td>
+        <td>${okPill(r.tizOk)}</td>
+        <td>${okPill(r.medidasOk)}</td>
+        <td>${esc(fmtShortEs(parseISO(p.reposoDate)))}</td>
+        <td class="num">${fmtN(o.dayMin,0)}</td>`;
+      frag.appendChild(tr);
+    });
+    const tot = document.createElement("tr");
+    const over = totalDay > MODULE_CAP ? " over" : "";
+    tot.innerHTML = `<td colspan="13" style="text-align:right;font-weight:700;color:var(--stone);background:#F8FBFA;">Total ${esc(key)} ese día</td>
+      <td class="num${over?' over':''}" style="font-weight:700;background:#F8FBFA;${over?'color:var(--rose);':''}">${fmtN(totalDay,0)} / ${fmtN(MODULE_CAP,1)}</td>`;
+    frag.appendChild(tot);
+  });
+  E.scheduleBody.innerHTML = "";
+  E.scheduleBody.appendChild(frag);
+}
+
+// ═══ PARSEO XLSX (nativo, sin librerías) ═══
+async function readXlsx(file){
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const files = await unzip(bytes);
+  const shared = parseShared(await readEntry(files,"xl/sharedStrings.xml",true));
+  const wbXml  = await readEntry(files,"xl/workbook.xml",true);
+  const rlXml  = await readEntry(files,"xl/_rels/workbook.xml.rels",true);
+  const paths  = sheetPaths(wbXml,rlXml);
+  const sheets = [];
+  for (const sp of paths){
+    const x = await readEntry(files,sp,true);
+    sheets.push({path:sp, rows:parseSheet(x,shared)});
+  }
+  return {sheets};
+}
+async function unzip(bytes){
+  const entries={}; let off=0;
+  while (off+30<bytes.length){
+    const sig = u32(bytes,off);
+    if (sig===0x02014b50||sig===0x06054b50) break;
+    if (sig!==0x04034b50){off++;continue;}
+    const method=u16(bytes,off+8), csize=u32(bytes,off+18), fnl=u16(bytes,off+26), exl=u16(bytes,off+28);
+    const name=txtDec(bytes.slice(off+30,off+30+fnl)), start=off+30+fnl+exl;
+    const comp=bytes.slice(start,start+csize);
+    let data;
+    if(method===0) data=comp;
+    else if(method===8) data=await inflateRaw(comp);
+    else throw new Error(`Método ZIP ${method} no soportado.`);
+    entries[name]=data; off=start+csize;
+  }
+  return entries;
+}
+async function inflateRaw(data){
+  if(!("DecompressionStream" in window)) throw new Error("Navegador sin DecompressionStream. Usa Chrome/Edge moderno.");
+  const s = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function readEntry(f,p,req){const d=f[p];if(!d&&req)throw new Error(`Entrada no encontrada en ZIP: ${p}`);return d?txtDec(d):"";}
+function parseShared(xml){
+  if(!xml) return [];
+  const d=new DOMParser().parseFromString(xml,"application/xml");
+  return [...d.querySelectorAll("si")].map(s=>[...s.querySelectorAll("t")].map(t=>t.textContent).join(""));
+}
+function parseSheet(xml,shared){
+  const d=new DOMParser().parseFromString(xml,"application/xml"), rows=[];
+  d.querySelectorAll("sheetData row").forEach(r=>{
+    const v=[];
+    r.querySelectorAll("c").forEach(c=>{
+      const ref=c.getAttribute("r")||"", col=colIndex(ref.replace(/[0-9]/g,""));
+      const t=c.getAttribute("t"), vn=c.querySelector("v"), it=c.querySelector("is t");
+      let val=it?it.textContent:(vn?vn.textContent:"");
+      if(t==="s"&&val!=="") val=shared[Number(val)]||"";
+      v[col]=val;
+    });
+    // Convertir a array denso: las columnas vacías al inicio/medio (ej. columna A sin datos)
+    // dejan "huecos" en el array disperso, y eso rompe Object.fromEntries más adelante.
+    rows.push(Array.from({length:v.length}, (_,i)=>v[i]??""));
+  });
+  return rows;
+}
+function sheetPaths(wbXml,rlXml){
+  const wb=new DOMParser().parseFromString(wbXml,"application/xml");
+  const rl=new DOMParser().parseFromString(rlXml,"application/xml");
+  const rm={};
+  rl.querySelectorAll("Relationship").forEach(r=>{rm[r.getAttribute("Id")]=r.getAttribute("Target").replace(/^\/?xl\//,"");});
+  return [...wb.querySelectorAll("sheet")].map(s=>{
+    const id=s.getAttribute("r:id")||s.getAttribute("id");
+    return "xl/"+(rm[id]||"worksheets/sheet1.xml").replace(/^\//,"");
+  });
+}
+
+// ═══ UTILIDADES ═══
+function getPref(id){ return state.prefs[id]||{}; }
+function setPref(id,upd){ state.prefs[id]={...getPref(id),...upd}; localStorage.setItem("cortePrefs",JSON.stringify(state.prefs)); }
+function priorityPill(v){
+  const c = clean(v).includes("URGENTE") ? "urgent" : "soft";
+  return `<span class="pill ${c}">${esc(v||"—")}</span>`;
+}
+function okPill(ok){ return ok ? `<span class="pill ok">OK</span>` : `<span class="pill wait">Pend.</span>`; }
+function pct(rows,key){ return rows.length ? rows.filter(r=>r[key]).length/rows.length*100 : 0; }
+function setBar(el,v){ el.style.width=`${Math.max(0,Math.min(100,v))}%`; }
+function groupBy(rows,kfn){
+  const m=new Map();
+  rows.forEach(r=>{ const k=kfn(r)||"Sin asignar"; if(!m.has(k))m.set(k,[]); m.get(k).push(r); });
+  return [...m.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([k,rows])=>({key:k,rows}));
+}
+function sumMin(rows){ return rows.reduce((s,r)=>s+(Number(r.minProg)||0),0); }
+function shortDate(v){ if(!v)return""; const p=v.split("-"); return p.length===3?`${p[2]}/${p[1]}`:v; }
+const MESES_ES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+function parseISO(s){
+  const m = String(s||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? new Date(Date.UTC(+m[1], +m[2]-1, +m[3])) : null;
+}
+function toISO(d){ return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`; }
+function fmtShortEs(d){ return d ? `${String(d.getUTCDate()).padStart(2,"0")}-${MESES_ES[d.getUTCMonth()]}` : ""; }
+function nextWorkDay(d){ // salta domingo (día 0)
+  const nd = new Date(d.getTime()+86400000);
+  if (nd.getUTCDay()===0) nd.setUTCDate(nd.getUTCDate()+1);
+  return nd;
+}
+
+// ═══ REPARTO DE MINUTOS POR CAPACIDAD DIARIA (compartida entre órdenes del mismo módulo) ═══
+function computeDailySchedule(){
+  const CAP = MODULE_CAP;
+
+  // Órdenes "programadas": Planta + módulo + fecha prog., con minutos reales que repartir
+  const orders = state.rows.map(r => {
+    const p = getPref(r.id);
+    if ((p.tipo||"")!=="Planta" || !p.modulo || !p.programDate) return null;
+    const totalMin = (Number(r.pdas)||0) * (Number(r.minProg)||0);
+    if (totalMin <= 0) return null;
+    const start = parseISO(p.programDate);
+    if (!start) return null;
+    return { row:r, modulo:p.modulo, totalMin, start };
+  }).filter(Boolean);
+
+  // Agrupar por módulo, ordenar por fecha de inicio (orden estable = primero en llegar, primero en usar el cupo del día)
+  const byModule = {};
+  orders.forEach(o => { (byModule[o.modulo] = byModule[o.modulo]||[]).push(o); });
+  Object.values(byModule).forEach(list => list.sort((a,b)=>a.start-b.start));
+
+  const usage = {}; // usage[modulo][fechaISO] = minutos ya ocupados ese día en ese módulo
+  const results = [];
+
+  Object.entries(byModule).forEach(([modulo, list]) => {
+    usage[modulo] = usage[modulo] || {};
+    list.forEach(o => {
+      let day = new Date(o.start.getTime());
+      if (day.getUTCDay()===0) day.setUTCDate(day.getUTCDate()+1); // si cae domingo, arranca el lunes
+      let remaining = o.totalMin;
+      const alloc = [];
+      let guard = 0;
+      while (remaining > 0.005 && guard < 500) {
+        guard++;
+        const key = toISO(day);
+        const used = usage[modulo][key] || 0;
+        const avail = CAP - used;
+        if (avail > 0.005) {
+          const take = Math.min(avail, remaining);
+          usage[modulo][key] = used + take;
+          alloc.push({date:key, minutes:take});
+          remaining -= take;
+        }
+        if (remaining > 0.005) day = nextWorkDay(day);
+      }
+      results.push({ row:o.row, modulo, totalMin:o.totalMin, alloc });
+    });
+  });
+
+  return results;
+}
+function formatCell(v,parseDate=false){
+  if(v==null) return "";
+  const s=String(v).trim(); if(!s) return "";
+  const n=Number(s);
+  if(parseDate&&/^\d{5}(\.\d+)?$/.test(s)&&n>30000&&n<70000) return excelSerial(n);
+  return s;
+}
+function excelSerial(serial){
+  const d=new Date(Math.round((serial-25569)*86400*1000));
+  return `${String(d.getUTCDate()).padStart(2,"0")}/${String(d.getUTCMonth()+1).padStart(2,"0")}/${d.getUTCFullYear()}`;
+}
+function hasDate(v){ return !!String(v||"").trim(); }
+function toNum(v){ const n=Number(String(v||"").replace(/,/g,"")); return Number.isFinite(n)?n:0; }
+function fmtN(v,d=3){ return (Number(v)||0).toLocaleString("es-PE",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function clean(v){ return String(v||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim().toUpperCase(); }
+function esc(v){ return String(v??"").replace(/[&<>"']/g,c=>({'&':"&amp;",'<':"&lt;",'>':"&gt;",'"':"&quot;","'":'&#39;'}[c])); }
+function dlCsv(lines,fn){
+  const csv=lines.map(l=>l.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"}));
+  a.download=fn; a.click(); URL.revokeObjectURL(a.href);
+}
+function colIndex(name){ return [...name].reduce((n,c)=>n*26+c.charCodeAt(0)-64,0)-1; }
+function u16(b,a){ return b[a]|(b[a+1]<<8); }
+function u32(b,a){ return (b[a]|(b[a+1]<<8)|(b[a+2]<<16)|(b[a+3]<<24))>>>0; }
+function txtDec(b){ return new TextDecoder("utf-8").decode(b); }
+function yyyymmdd(){ return new Date().toISOString().slice(0,10); }
+function toast(msg){ E.toast.textContent=msg; E.toast.style.display="block"; clearTimeout(toast._t); toast._t=setTimeout(()=>E.toast.style.display="none",3200); }
+</script>
+</body>
+</html>
