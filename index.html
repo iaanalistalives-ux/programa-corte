@@ -375,6 +375,7 @@ const state = {
 };
 let moduleViewSel = null; // null = sin filtro (tablero normal); "Todos" = vista agrupada; o un módulo puntual
 const SHEET_ID = "1A2qzluipN47UruivzYTRoQmXyVlR66T3uheaSaOXfXI"; // LISTADO_CORTE_PCP
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHflcY2SxWjlZ5GNgJvzQq3x_NFx8WIAam_JdjqM7yHP9II8cpVvvaugYyj8toaCXo/exec";
 
 // Mapa de columnas Excel → campo JS
 const COL = {
@@ -506,6 +507,7 @@ E.modalImgBtn.addEventListener("click", async () => {
 // (así nunca se ve un listado "viejo" al reabrir el archivo).
 ["corteRows","corteSource"].forEach(k => localStorage.removeItem(k));
 loadFromSheet();
+loadSharedPrefs(); // asignaciones (Taller/Módulo/Fecha) guardadas por otras computadoras
 
 // ═══ EVENTOS ═══
 function setLoadStatus(big, small, showRetry){
@@ -1548,7 +1550,50 @@ function sheetPaths(wbXml,rlXml){
 
 // ═══ UTILIDADES ═══
 function getPref(id){ return state.prefs[id]||{}; }
-function setPref(id,upd){ state.prefs[id]={...getPref(id),...upd}; localStorage.setItem("cortePrefs",JSON.stringify(state.prefs)); }
+function setPref(id,upd){
+  state.prefs[id]={...getPref(id),...upd};
+  localStorage.setItem("cortePrefs",JSON.stringify(state.prefs));
+  syncPrefToSheet(id);
+}
+
+// Guarda la asignación de esta orden en la pestaña "Asignaciones" del Sheet (compartido
+// entre computadoras). Se dispara en segundo plano; si falla, la asignación igual queda
+// guardada localmente (localStorage) y no se pierde nada, solo no se comparte esta vez.
+function syncPrefToSheet(id){
+  const p = getPref(id);
+  fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    headers: {"Content-Type": "text/plain;charset=utf-8"}, // evita el preflight CORS que Apps Script no maneja
+    body: JSON.stringify({
+      id,
+      tipo: p.tipo||"", modulo: p.modulo||"", tallerCostura: p.tallerCostura||"",
+      servicioCorte: p.servicioCorte||"", programDate: p.programDate||"",
+      reposoDate: p.reposoDate||"", envioDate: p.envioDate||"", obs: p.obs||""
+    })
+  }).catch(err => console.error("No se pudo guardar la asignación en el Sheet:", err));
+}
+
+// Trae las asignaciones que otras computadoras ya guardaron en el Sheet y las mezcla con
+// las locales (el Sheet manda si hay conflicto, por ser la fuente compartida).
+async function loadSharedPrefs(){
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {method:"GET"});
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.status !== "ok" || !Array.isArray(data.data)) return;
+    data.data.forEach(row => {
+      if (!row.ID) return;
+      state.prefs[row.ID] = {
+        ...getPref(row.ID),
+        tipo: row.Tipo||"", modulo: row.Modulo||"", tallerCostura: row.TallerCostura||"",
+        servicioCorte: row.ServicioCorte||"", programDate: row.ProgramDate||"",
+        reposoDate: row.ReposoDate||"", envioDate: row.EnvioDate||"", obs: row.Obs||""
+      };
+    });
+    localStorage.setItem("cortePrefs", JSON.stringify(state.prefs));
+    applyFilters();
+  } catch(err){ console.error("No se pudieron cargar las asignaciones compartidas del Sheet:", err); }
+}
 function priorityPill(v){
   const c = clean(v).includes("URGENTE") ? "urgent" : "soft";
   return `<span class="pill ${c}">${esc(v||"—")}</span>`;
