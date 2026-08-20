@@ -77,6 +77,19 @@
     /* ─── TOOLBAR ─── */
     .toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center; }
     #searchInput { width:240px; }
+    /* botones de reporte del toolbar: look consistente y suave */
+    .toolbar button { background:#fff; color:var(--sage); border:1px solid var(--warm); }
+    .toolbar button:hover { background:var(--warm-light); }
+    /* grupo de acciones (Dashboard / Limpiar) empujado a la derecha */
+    .tb-actions { display:flex; gap:8px; margin-left:auto; align-items:center; padding-left:12px; border-left:1px solid var(--warm); }
+    .toolbar .btn-primary { background:var(--sage); color:#fff; border-color:var(--sage); }
+    .toolbar .btn-primary:hover { background:var(--sage-dark); border-color:var(--sage-dark); }
+    .toolbar .btn-clear { background:#fff; color:var(--rose); border-color:var(--warm); }
+    .toolbar .btn-clear:hover { background:#FEF2F2; border-color:var(--rose); }
+    @media (max-width:720px){
+      .tb-actions { margin-left:0; padding-left:0; border-left:none; width:100%; }
+      .tb-actions .btn-primary { flex:1; justify-content:center; }
+    }
 
     /* ─── KPI CARDS ─── */
     .kpis { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
@@ -198,10 +211,6 @@
     <div class="htitle">Programa de Corte</div>
     <div class="hsub">Órdenes · Avance de ruta · Tizado · Medidas — PCP</div>
   </div>
-  <div class="hactions">
-    <button class="btn-action" id="dashboardBtn">📊 Dashboard</button>
-    <button class="btn-ghost btn-icon" id="clearBtn" title="Limpiar datos">✕</button>
-  </div>
 </header>
 
 <main>
@@ -240,6 +249,10 @@
     </select>
     <button id="reposoBtn">Programa reposo</button>
     <button id="envioBtn">Programa envíos</button>
+    <div class="tb-actions">
+      <button class="btn-primary" id="dashboardBtn">📊 Dashboard</button>
+      <button class="btn-clear" id="clearBtn" title="Limpiar datos importados y ajustes guardados">✕ Limpiar</button>
+    </div>
   </section>
 
   <div class="kpis">
