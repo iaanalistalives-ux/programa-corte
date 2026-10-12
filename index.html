@@ -695,7 +695,8 @@
     .savestate.err{color:var(--rose);font-weight:700;cursor:pointer;text-decoration:underline;}
     .consulta{font-size:12px;background:var(--warm-light);color:var(--stone);border-radius:6px;padding:4px 10px;}
     body.arrastrando .drop,body.arrastrando .filebar{outline:3px dashed var(--sage);outline-offset:3px;}
-  </style>
+  .lsTope500{font-size:12px;color:#5F726C;text-align:center;padding:8px 0}
+</style>
 <style id="lsLimp2Css">/* lives-limpieza v2 · sin notas, veredictos ni paneles de título arriba */.verdict,#verdict{display:none!important}#insight{display:none!important}</style>
 </head>
 <body>
@@ -1778,8 +1779,17 @@ function render(){
     E.empty.hidden = !!state.filtered.length;
     const frag = document.createDocumentFragment();
     E.body.innerHTML = "";
-    state.filtered.forEach(row => frag.appendChild(renderRow(row)));
+    /* Regla 500: sin filtros se dibujan solo las primeras 500 órdenes (mismo orden del programa); con filtro, todas. */
+    const sinFiltro = !E.searchInput.value.trim() && !E.priorityFilter.value && !E.routeFilter.value && !E.typeFilter.value && !moduleViewSel;
+    const dibujar = (sinFiltro && state.filtered.length > 500) ? state.filtered.slice(0, 500) : state.filtered;
+    dibujar.forEach(row => frag.appendChild(renderRow(row)));
     E.body.appendChild(frag);
+    let pie = document.getElementById("lsTope500");
+    if (!pie) { pie = document.createElement("div"); pie.id = "lsTope500"; pie.className = "lsTope500"; E.flatWrap.appendChild(pie); }
+    if (dibujar.length < state.filtered.length) {
+      pie.textContent = "Se muestran las primeras 500 órdenes de " + state.filtered.length.toLocaleString("es-PE") + ". Usa los filtros para ver las demás.";
+      pie.style.display = "";
+    } else { pie.textContent = ""; pie.style.display = "none"; }
   }
 
   E.sourceHint.textContent = state.sourceName
